@@ -1,5 +1,6 @@
 plugins {
   id 'java-library'
+  id 'maven-publish'
   // To manage included native libraries
   alias(libs.plugins.javacpp)
 }
@@ -8,7 +9,6 @@ ext.moduleName = 'qupath.extension.bioimageio'
 ext.qupathVersion = gradle.ext.qupathVersion
 
 description = 'QuPath extension to use the Bioimage Model Zoo (bioimage.io)'
-
 version = "0.1.0-SNAPSHOT"
 
 
@@ -55,6 +55,17 @@ java {
 }
 
 /*
+ * Manifest info
+ */
+jar {
+	manifest {
+		attributes("Implementation-Title": project.name,
+				   "Implementation-Version": archiveVersion,
+				   "Automatic-Module-Name": "io.github." + moduleName)
+	}
+}
+
+/*
  * Create javadocs for all modules/packages in one place.
  * Use -PstrictJavadoc=true to fail on error with doclint (which is rather strict).
  */
@@ -75,4 +86,37 @@ tasks.withType(org.gradle.jvm.tasks.Jar) {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+
+publishing {
+	repositories {
+		maven {
+			name = "SciJava"
+			def releasesRepoUrl = uri("https://maven.scijava.org/content/repositories/releases")
+			def snapshotsRepoUrl = uri("https://maven.scijava.org/content/repositories/snapshots")
+			// Use gradle -Prelease publish
+			url = project.hasProperty('release') ? releasesRepoUrl : snapshotsRepoUrl
+			credentials {
+				username = System.getenv("MAVEN_USER")
+				password = System.getenv("MAVEN_PASS")
+			}
+		}
+	}
+
+	publications {
+		mavenJava(MavenPublication) {
+			groupId = 'io.github.qupath'
+			from components.java
+
+			pom {
+				licenses {
+					license {
+						name = 'Apache License v2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0'
+					}
+				}
+			}
+		}
+	}
 }
