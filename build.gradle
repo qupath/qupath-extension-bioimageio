@@ -27,8 +27,8 @@ dependencies {
 }
 
 processResources {
-  from ("${projectDir}/LICENSE.txt") {
-    into 'licenses/'
+  from ("${projectDir}/LICENSE") {
+    into 'META-INF/licenses/'
   }
 }
 
