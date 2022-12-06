@@ -9,7 +9,7 @@ ext.moduleName = 'qupath.extension.bioimageio'
 ext.qupathVersion = gradle.ext.qupathVersion
 
 description = 'QuPath extension to use the Bioimage Model Zoo (bioimage.io)'
-version = "0.1.0-SNAPSHOT"
+version = "0.1.0"
 
 
 dependencies {
