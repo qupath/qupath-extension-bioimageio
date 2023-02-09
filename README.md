@@ -2,6 +2,8 @@
 
 This is a QuPath extension for working with the Bioimage Model Zoo (https://bioimage.io).
 
+You can download the .jar file from [qupath-extension-bioimageio-0.1.0.jar](https://github.com/qupath/qupath-extension-bioimageio/releases/download/v0.1.0/qupath-extension-bioimageio-0.1.0.jar)
+
 It's early and experimental - subject to change in later releases.
 
 The main aim is to enable models kept in the Zoo to be imported into some QuPath-friendly form.
