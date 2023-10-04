@@ -1,3 +1,8 @@
+[![Extension docs](https://img.shields.io/badge/docs-qupath_djl-red)](https://qupath.readthedocs.io/en/stable/docs/deep/bioimage.html)
+[![Forum](https://img.shields.io/badge/forum-image.sc-green)](https://forum.image.sc/tag/qupath)
+[![Downloads (latest release)](https://img.shields.io/github/downloads-pre/qupath/qupath-extension-bioimageio/latest/total)](https://github.com/qupath/qupath-extension-bioimageio/releases/latest)
+[![Downloads (all releases)](https://img.shields.io/github/downloads/qupath/qupath-extension-bioimageio/total)](https://github.com/qupath/qupath-extension-bioimageio/releases)
+
 # QuPath Bioimage Model Zoo extension
 
 This is a QuPath extension for working with the Bioimage Model Zoo (https://bioimage.io).
