@@ -1,10 +1,11 @@
-rootProject.name = 'qupath-extension-bioimageio'
-
 pluginManagement {
 	plugins {
 		id 'org.bytedeco.gradle-javacpp-platform' version '1.5.8'
 	}
 }
+
+rootProject.name = 'qupath-extension-bioimageio'
+
 
 gradle.ext.qupathVersion = "0.5.0-SNAPSHOT"
 
