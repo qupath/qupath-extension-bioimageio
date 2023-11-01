@@ -1,16 +1,37 @@
 plugins {
-  id 'java-library'
-  id 'maven-publish'
-  // To manage included native libraries
-  alias(libs.plugins.javacpp)
+	id 'java-library'
+	id 'maven-publish'
+	// To manage included native libraries
+	// alias(libs.plugins.javacpp)
+	id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
 ext.moduleName = 'qupath.extension.bioimageio'
 ext.qupathVersion = gradle.ext.qupathVersion
+ext.qupathJavaVersion = 17
 
 description = 'QuPath extension to use the Bioimage Model Zoo (bioimage.io)'
-version = "0.1.0"
+version = "0.2.0"
 
+// Looks redundant to include this here and in settings.gradle,
+// but helps overcome some gradle trouble when including this as a subproject
+// within QuPath itself (which is useful during development).
+repositories {
+	// Add this if you need access to dependencies only installed locally
+	//  mavenLocal()
+
+	mavenCentral()
+
+	// Add scijava - which is where QuPath's jars are hosted
+	maven {
+		url "https://maven.scijava.org/content/repositories/releases"
+	}
+
+	maven {
+		url "https://maven.scijava.org/content/repositories/snapshots"
+	}
+
+}
 
 dependencies {
     implementation "io.github.qupath:qupath-gui-fx:${qupathVersion}"
@@ -20,6 +41,7 @@ dependencies {
     // These are included in QuPath distributions
     implementation libs.bundles.logging
     implementation libs.snakeyaml
+	implementation 'org.controlsfx:controlsfx:11.1.2'
     
     testImplementation libs.junit
     testRuntimeOnly libs.junit.engine
@@ -45,7 +67,7 @@ tasks.register("copyDependencies", Copy) {
  */
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(qupathJavaVersion)
     }
     if (project.properties['sources'])
 	    withSourcesJar()
@@ -128,3 +150,4 @@ publishing {
 		}
 	}
 }
+

@@ -20,8 +20,7 @@ import org.controlsfx.control.action.Action;
 
 import qupath.lib.common.Version;
 import qupath.lib.gui.QuPathGUI;
-import qupath.lib.gui.ActionTools.ActionDescription;
-import qupath.lib.gui.ActionTools.ActionMenu;
+import qupath.lib.gui.actions.annotations.ActionMenu;
 import qupath.lib.gui.extensions.GitHubProject;
 import qupath.lib.gui.extensions.QuPathExtension;
 import qupath.lib.gui.tools.MenuTools;
@@ -34,7 +33,7 @@ public class BioimageIoExtension implements QuPathExtension, GitHubProject {
 
 	private boolean isInstalled = false;
 	
-	@ActionDescription("Import a pixel classifier from a bioimage.io package.")
+//	@ActionConfig(value = "action", bundle = "qupath/ext/bioimageio/strings")
 	@ActionMenu("Extensions>BioImage Model Zoo...>Import pixel classifier (bioimage.io)")
 	private Action actionBioimageIO;
 	
