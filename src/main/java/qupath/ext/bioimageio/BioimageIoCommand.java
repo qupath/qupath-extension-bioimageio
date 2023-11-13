@@ -187,13 +187,6 @@ public class BioimageIoCommand {
 	
 
 	
-//	static PixelClassifier buildPixelClassifier(DnnParameters params, DnnModel<?> model) {
-//		// TODO: Check how to handle padding
-//		var predictionOp = ImageOps.ML.dnn(model, params.getTileWidth(), params.getTileHeight(), Padding.empty());
-//		
-//		return buildPixelClassifier2(params, predictionOp);
-//	}
-	
 	static class DnnBuilderPane {
 		
 		private QuPathGUI qupath;
