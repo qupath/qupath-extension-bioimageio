@@ -187,13 +187,6 @@ public class BioimageIoCommand {
 	
 
 	
-//	static PixelClassifier buildPixelClassifier(DnnParameters params, DnnModel<?> model) {
-//		// TODO: Check how to handle padding
-//		var predictionOp = ImageOps.ML.dnn(model, params.getTileWidth(), params.getTileHeight(), Padding.empty());
-//		
-//		return buildPixelClassifier2(params, predictionOp);
-//	}
-	
 	static class DnnBuilderPane {
 		
 		private QuPathGUI qupath;
@@ -607,8 +600,9 @@ public class BioimageIoCommand {
 					var cls = Class.forName("qupath.imagej.gui.IJExtension");
 					var method = cls.getDeclaredMethod("getImageJInstance");
 					ij = (ImageJ)method.invoke(null);
-				} catch (Exception e) {
-					logger.debug("Unable to create ImageJ instance: " + e.getLocalizedMessage(), e);
+				} catch (Throwable t) {
+					// We can get errors here, but should be able to recover
+					logger.warn("Unable to create ImageJ instance: " + t.getLocalizedMessage(), t);
 				}
 			}
 			if (ij != null)
