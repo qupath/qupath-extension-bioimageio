@@ -2,7 +2,6 @@ plugins {
 	id 'java-library'
 	id 'maven-publish'
 	// To manage included native libraries
-	// alias(libs.plugins.javacpp)
 	id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
@@ -10,8 +9,11 @@ ext.moduleName = 'qupath.extension.bioimageio'
 ext.qupathVersion = gradle.ext.qupathVersion
 ext.qupathJavaVersion = 17
 
-description = 'QuPath extension to use the Bioimage Model Zoo (bioimage.io)'
-version = "0.2.0"
+base {
+	description = 'QuPath extension to use the Bioimage Model Zoo (bioimage.io)'
+	version = "0.2.0-SNAPSHOT"
+	group = 'io.github.qupath'
+}
 
 // Looks redundant to include this here and in settings.gradle,
 // but helps overcome some gradle trouble when including this as a subproject
@@ -41,10 +43,10 @@ dependencies {
     // These are included in QuPath distributions
     implementation libs.bundles.logging
     implementation libs.snakeyaml
-	implementation 'org.controlsfx:controlsfx:11.1.2'
+	implementation libs.controlsfx
     
     testImplementation libs.junit
-    testRuntimeOnly libs.junit.engine
+    testRuntimeOnly libs.junit.platform
 
 }
 
@@ -63,7 +65,7 @@ tasks.register("copyDependencies", Copy) {
 }
 
 /*
- * Ensure Java 11 compatibility
+ * Ensure Java compatibility
  */
 java {
     toolchain {
@@ -136,7 +138,6 @@ publishing {
 
 	publications {
 		mavenJava(MavenPublication) {
-			groupId = 'io.github.qupath'
 			from components.java
 
 			pom {

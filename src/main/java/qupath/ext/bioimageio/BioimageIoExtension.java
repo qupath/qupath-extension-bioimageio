@@ -78,7 +78,7 @@ public class BioimageIoExtension implements QuPathExtension, GitHubProject {
 
 	@Override
 	public Version getQuPathVersion() {
-		return Version.parse("0.5.0-SNAPSHOT");
+		return Version.parse("0.5.0");
 	}
 
 }
