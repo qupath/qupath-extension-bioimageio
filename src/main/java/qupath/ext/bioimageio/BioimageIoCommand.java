@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import javax.swing.SwingUtilities;
 
+import javafx.stage.FileChooser;
 import org.bytedeco.javacpp.PointerScope;
 import org.bytedeco.opencv.global.opencv_core;
 import org.bytedeco.opencv.opencv_core.Mat;
@@ -60,10 +61,11 @@ import javafx.scene.text.FontWeight;
 import javafx.util.StringConverter;
 import qupath.bioimageio.spec.BioimageIoSpec;
 import qupath.bioimageio.spec.BioimageIoSpec.BioimageIoModel;
+import qupath.fx.dialogs.FileChoosers;
 import qupath.imagej.tools.IJTools;
 import qupath.lib.common.GeneralTools;
 import qupath.lib.gui.QuPathGUI;
-import qupath.lib.gui.dialogs.Dialogs;
+import qupath.fx.dialogs.Dialogs;
 import qupath.lib.gui.tools.PaneTools;
 import qupath.lib.images.ImageData;
 import qupath.lib.images.servers.ColorTransforms;
@@ -79,6 +81,9 @@ import qupath.opencv.ops.ImageOp;
 import qupath.opencv.ops.ImageOps;
 import qupath.opencv.tools.NumpyTools;
 import qupath.opencv.tools.OpenCVTools;
+
+import static qupath.bioimageio.spec.BioimageIoSpec.getAxesString;
+
 
 /**
  * Very early exploration of BioImage Model Zoo support within QuPath.
@@ -102,7 +107,8 @@ public class BioimageIoCommand {
 	public void promptForModel() {
 		
 		// TODO: In the future consider handling .zip files
-		var file = Dialogs.promptForFile(title, null, "BioImage Model Zoo spec", "", ".yml", ".yaml");
+		var file = FileChoosers.promptForFile(title,
+				new FileChooser.ExtensionFilter("BioImage Model Zoo YAML file", "*.yml", "*.yaml"));
 		if (file == null)
 			return;
 		
@@ -134,14 +140,15 @@ public class BioimageIoCommand {
 					showLoadPixelClassifier = true;
 				}
 			} else {
-				var fileSaved = Dialogs.promptToSaveFile(title, null, null, "Pixel classifier", ".json");
+				var fileSaved = FileChoosers.promptToSaveFile(title,
+						FileChoosers.promptToSaveFile(new FileChooser.ExtensionFilter("Pixel classifier", "*.json")));
 				if (fileSaved != null) {
 					PixelClassifiers.writeClassifier(classifier, fileSaved.toPath());
 					Dialogs.showInfoNotification(title, "Pixel classifier saved to \n" + fileSaved.getAbsolutePath());
 				}
 			}
 			
-						
+
 			// Offer to show the prediction in the current image, if it's small enough
 			var imageData = qupath.getImageData();
 			if (imageData != null) {
@@ -164,7 +171,8 @@ public class BioimageIoCommand {
 
 			
 		} catch (Exception e) {
-			Dialogs.showErrorMessage(title, e);
+			Dialogs.showErrorMessage(title, "Error loading or running model. See the log for more details.");
+			logger.error("Error loading model", e);
 		}
 	}
 	
@@ -189,18 +197,16 @@ public class BioimageIoCommand {
 	
 	static class DnnBuilderPane {
 		
-		private QuPathGUI qupath;
-		private String title;
+		private final QuPathGUI qupath;
+		private final String title;
 		
-		private static Font font = Font.font("Arial");
+		private static final Font font = Font.font("Arial");
 		
 		private DnnBuilderPane(QuPathGUI qupath, String title) {
 			this.qupath = qupath;
 			this.title = title;
 		}
-		
-		private GridPane pane;
-		
+
 		private PatchClassifierParams promptForParameters(BioimageIoModel model, ImageData<?> imageData) {
 			
 			Objects.requireNonNull(imageData, "ImageData must not be null!");
@@ -213,8 +219,8 @@ public class BioimageIoCommand {
 			
 			int nChannels = params.getInputChannels().size();
 			int nOutputClasses = params.getOutputClasses().size();
-						
-			pane = new GridPane();
+
+			GridPane pane = new GridPane();
 			pane.setHgap(5);
 			pane.setVgap(5);
 			
@@ -234,8 +240,7 @@ public class BioimageIoCommand {
 					, row++);
 			
 			addSeparatorRow(pane, row++);
-			
-			
+
 			// Handle input channels & their order
 			addTitleRow(pane, "Input channels", row++);
 			addDescriptionRow(pane, "The image channels provided as input to the model", row++);
@@ -307,8 +312,9 @@ public class BioimageIoCommand {
 				int[] shape = output.getShape().getShape();				
 				int[] steps = output.getShape().getShapeStep();				
 				int[] minSize = output.getShape().getShapeMin();
-				int indX = output.getAxes().toLowerCase().indexOf("x");
-				int indY = output.getAxes().toLowerCase().indexOf("y");
+				String outputAxes = getAxesString(output.getAxes()).toLowerCase();
+				int indX = outputAxes.indexOf("x");
+				int indY = outputAxes.indexOf("y");
 				if (indX >= 0 && indY >= 0) {
 					if (minSize.length > 0) {
 						width = minSize[indX];
