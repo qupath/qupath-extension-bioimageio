@@ -59,14 +59,14 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.StringConverter;
-import qupath.bioimageio.spec.BioimageIoSpec;
+import qupath.bioimageio.spec.BioimageIoParsing;
 import qupath.bioimageio.spec.BioimageIoSpec.BioimageIoModel;
 import qupath.fx.dialogs.FileChoosers;
+import qupath.fx.utils.GridPaneUtils;
 import qupath.imagej.tools.IJTools;
 import qupath.lib.common.GeneralTools;
 import qupath.lib.gui.QuPathGUI;
 import qupath.fx.dialogs.Dialogs;
-import qupath.lib.gui.tools.PaneTools;
 import qupath.lib.images.ImageData;
 import qupath.lib.images.servers.ColorTransforms;
 import qupath.lib.images.servers.ColorTransforms.ColorTransform;
@@ -82,7 +82,6 @@ import qupath.opencv.ops.ImageOps;
 import qupath.opencv.tools.NumpyTools;
 import qupath.opencv.tools.OpenCVTools;
 
-import static qupath.bioimageio.spec.BioimageIoSpec.getAxesString;
 
 
 /**
@@ -94,8 +93,8 @@ public class BioimageIoCommand {
 	
 	private final static Logger logger = LoggerFactory.getLogger(BioimageIoCommand.class);
 	
-	private QuPathGUI qupath;
-	private static String title = "Bioimage.io to Pixel Classifier";
+	private final QuPathGUI qupath;
+	private static final String title = "Bioimage.io to Pixel Classifier";
 	
 	BioimageIoCommand(QuPathGUI qupath) {
 		this.qupath = qupath;
@@ -108,15 +107,14 @@ public class BioimageIoCommand {
 		
 		// TODO: In the future consider handling .zip files
 		var file = FileChoosers.promptForFile(title,
-				new FileChooser.ExtensionFilter("BioImage Model Zoo YAML file", "*.yml", "*.yaml"));
+				FileChoosers.createExtensionFilter("BioImage Model Zoo YAML file", "*.yml", "*.yaml"));
 		if (file == null)
 			return;
 		
 		
 		boolean showLoadPixelClassifier = false;
 		try {
-	
-			var model = BioimageIoSpec.parseModel(file);
+			var model = BioimageIoParsing.parseModel(file);
 						
 			var params = new DnnBuilderPane(qupath, title)
 					.promptForParameters(model, qupath.getImageData());
@@ -179,7 +177,7 @@ public class BioimageIoCommand {
 	
 	static void showDialog(ImageData<?> imageData, String path) throws IOException {
 		
-		var model = BioimageIoSpec.parseModel(Paths.get(path));
+		var model = BioimageIoParsing.parseModel(Paths.get(path));
 		
 		var params = new DnnBuilderPane(QuPathGUI.getInstance(), title)
 				.promptForParameters(model, imageData);
@@ -262,8 +260,8 @@ public class BioimageIoCommand {
 				var comboChannel = new ComboBox<>(availableChannels);
 				comboChannel.getSelectionModel().select((c-1) % availableChannels.size());
 				inputChannels.add(comboChannel.getSelectionModel().getSelectedItem());
-				
-				PaneTools.setToExpandGridPaneWidth(comboChannel);
+
+				GridPaneUtils.setToExpandGridPaneWidth(comboChannel);
 				addLabeledRow(pane, "Channel "+c, row++, "Choose channel " + c + " input", comboChannel);
 				
 				int ind = c - 1;
@@ -283,7 +281,7 @@ public class BioimageIoCommand {
 			addDescriptionRow(pane, "The pixel size at which the model will be applied", row++);
 			var factoryDownsample = new SpinnerValueFactory.DoubleSpinnerValueFactory(1.0, Double.MAX_VALUE, 1.0, 0.1);
 			var spinnerDownsample = new Spinner<>(factoryDownsample);
-			PaneTools.setToExpandGridPaneWidth(spinnerDownsample);
+			GridPaneUtils.setToExpandGridPaneWidth(spinnerDownsample);
 			addLabeledRow(pane, "Downsample", row++, "Choose downsample for input image", spinnerDownsample);
 			var labelResolution = new Label(calToString(cal, 1));
 			labelResolution.textProperty().bind(Bindings.createStringBinding(() -> {
@@ -312,7 +310,7 @@ public class BioimageIoCommand {
 				int[] shape = output.getShape().getShape();				
 				int[] steps = output.getShape().getShapeStep();				
 				int[] minSize = output.getShape().getShapeMin();
-				String outputAxes = getAxesString(output.getAxes()).toLowerCase();
+				String outputAxes = BioimageIoSpec.getAxesString(output.getAxes()).toLowerCase();
 				int indX = outputAxes.indexOf("x");
 				int indY = outputAxes.indexOf("y");
 				if (indX >= 0 && indY >= 0) {
@@ -341,15 +339,15 @@ public class BioimageIoCommand {
 				// TODO: Incorporate step size, if available
 				factoryHeight.setAmountToStepBy(stepHeight);
 				var spinnerHeight = new Spinner<>(factoryHeight);
-	
-				PaneTools.setToExpandGridPaneWidth(spinnerWidth, spinnerHeight);
+
+				GridPaneUtils.setToExpandGridPaneWidth(spinnerWidth, spinnerHeight);
 				addLabeledRow(pane, "Tile width", row++, "Choose input tile width in pixels", spinnerWidth);
 				addLabeledRow(pane, "Tile height", row++, "Choose input tile height in pixels", spinnerHeight);
 				spinnerWidth.setEditable(false);
 				spinnerHeight.setEditable(false);
 				spinnerWidth.valueProperty().addListener((v, o, n) -> builder.patchSize(spinnerWidth.getValue(), spinnerHeight.getValue()));
 				spinnerHeight.valueProperty().addListener((v, o, n) -> builder.patchSize(spinnerWidth.getValue(), spinnerHeight.getValue()));
-				PaneTools.setToExpandGridPaneWidth(spinnerWidth, spinnerHeight, labelResolution);
+				GridPaneUtils.setToExpandGridPaneWidth(spinnerWidth, spinnerHeight, labelResolution);
 			} else {
 				addDescriptionRow(pane, String.format("Tile size fixed to %d x %d", width, height), row++);
 			}
@@ -357,7 +355,7 @@ public class BioimageIoCommand {
 			// Handle output
 			addTitleRow(pane, "Output classes", row++);
 			addDescriptionRow(pane, "The classifications corresponding to the model output", row++);
-			PaneTools.setToExpandGridPaneWidth(labelResolution);
+			GridPaneUtils.setToExpandGridPaneWidth(labelResolution);
 
 			ObservableList<PathClass> availableClasses = FXCollections.observableArrayList();
 			if (qupath != null)
@@ -370,7 +368,7 @@ public class BioimageIoCommand {
 				comboOutputClasses.setConverter(new PathClassStringConverter());
 				if (c <= availableClasses.size())
 					comboOutputClasses.getSelectionModel().select(c-1);
-				PaneTools.setToExpandGridPaneWidth(comboOutputClasses);
+				GridPaneUtils.setToExpandGridPaneWidth(comboOutputClasses);
 				addLabeledRow(pane, "Class "+c, row++, "Choose output classification for channel " + c, comboOutputClasses);
 				int ind = c - 1;
 				comboOutputClasses.getSelectionModel().selectedItemProperty().addListener((v, o, n) -> {
@@ -393,20 +391,19 @@ public class BioimageIoCommand {
 					logger.warn("Output type cannot be null");
 			});
 
-			PaneTools.setToExpandGridPaneWidth(comboOutputType);
+			GridPaneUtils.setToExpandGridPaneWidth(comboOutputType);
 			addLabeledRow(pane, "Output", row++, "Choose output type", comboOutputType);
 			
 			var tester = new BioimageIoTest(model);
 			if (tester.hasInput()) {
 				var btnTest = new Button("Show test images in ImageJ");
 				btnTest.setOnAction(e -> tester.runAndShowOutput(params));
-				PaneTools.addGridRow(pane, row++, 0, 
+				GridPaneUtils.addGridRow(pane, row++, 0,
 						"Attempt to run prediction on the test image, if available.\n"
-						+ "This checks the model runes, but does not use most of the customizations here\n"
-						+ "because the channel input is fixed.",
-						btnTest, btnTest);		
-				
-				PaneTools.setToExpandGridPaneWidth(btnTest);
+								+ "This checks the model runes, but does not use most of the customizations here\n"
+								+ "because the channel input is fixed.",
+						btnTest, btnTest);
+				GridPaneUtils.setToExpandGridPaneWidth(btnTest);
 			}
 			
 			var scrollPane = new ScrollPane(pane);
@@ -442,8 +439,8 @@ public class BioimageIoCommand {
 		private static void addSeparatorRow(GridPane pane, int row) {
 			var sep = new Separator(Orientation.HORIZONTAL);
 			GridPane.setColumnSpan(sep, GridPane.REMAINING);
-			PaneTools.setToExpandGridPaneWidth(sep);
-			PaneTools.addGridRow(pane, row, 0, null, sep, sep);
+			GridPaneUtils.setToExpandGridPaneWidth(sep);
+			GridPaneUtils.addGridRow(pane, row, 0, null, sep, sep);
 		}
 		
 		private static void addTitleRow(GridPane pane, String labelText, int row) {
@@ -467,16 +464,16 @@ public class BioimageIoCommand {
 		private static void addLabeledRow(GridPane pane, String labelText, int row, String tooltip, Node... nodes) {
 			var label = new Label(labelText);
 			if (nodes.length == 0) {
-				PaneTools.addGridRow(pane, row, 0, tooltip, label);
+				GridPaneUtils.addGridRow(pane, row, 0, tooltip, label);
 			} else {
 				label.setLabelFor(nodes[0]);
 				if (nodes.length == 1)
-					PaneTools.addGridRow(pane, row, 0, tooltip, label, nodes[0]);		
+					GridPaneUtils.addGridRow(pane, row, 0, tooltip, label, nodes[0]);
 				else {
 					var nodes2 = new Node[nodes.length+1];
 					nodes2[0] = label;
 					System.arraycopy(nodes, 0, nodes2, 1, nodes.length);
-					PaneTools.addGridRow(pane, row, 0, tooltip, nodes2);
+					GridPaneUtils.addGridRow(pane, row, 0, tooltip, nodes2);
 				}
 			}
 		}
@@ -592,7 +589,7 @@ public class BioimageIoCommand {
 	
 	/**
 	 * Try to show ImageJ images.
-	 * @param imps
+	 * @param imps The images.
 	 */
 	private static void tryToShowImages(Collection<? extends ImagePlus> imps) {
 		if (imps.isEmpty())
