@@ -37,6 +37,7 @@ import org.bytedeco.opencv.opencv_core.Mat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -59,8 +60,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.StringConverter;
-import qupath.bioimageio.spec.BioimageIoParsing;
-import qupath.bioimageio.spec.BioimageIoSpec.BioimageIoModel;
 import qupath.fx.dialogs.FileChoosers;
 import qupath.fx.utils.GridPaneUtils;
 import qupath.imagej.tools.IJTools;
@@ -82,6 +81,8 @@ import qupath.opencv.ops.ImageOps;
 import qupath.opencv.tools.NumpyTools;
 import qupath.opencv.tools.OpenCVTools;
 
+import qupath.bioimageio.spec.Model;
+import qupath.bioimageio.spec.tensor.axes.Axis;
 
 
 /**
@@ -114,7 +115,7 @@ public class BioimageIoCommand {
 		
 		boolean showLoadPixelClassifier = false;
 		try {
-			var model = BioimageIoParsing.parseModel(file);
+			var model = Model.parseModel(file);
 						
 			var params = new DnnBuilderPane(qupath, title)
 					.promptForParameters(model, qupath.getImageData());
@@ -177,7 +178,7 @@ public class BioimageIoCommand {
 	
 	static void showDialog(ImageData<?> imageData, String path) throws IOException {
 		
-		var model = BioimageIoParsing.parseModel(Paths.get(path));
+		var model = Model.parseModel(Paths.get(path));
 		
 		var params = new DnnBuilderPane(QuPathGUI.getInstance(), title)
 				.promptForParameters(model, imageData);
@@ -205,13 +206,13 @@ public class BioimageIoCommand {
 			this.title = title;
 		}
 
-		private PatchClassifierParams promptForParameters(BioimageIoModel model, ImageData<?> imageData) {
+		private PatchClassifierParams promptForParameters(Model model, ImageData<?> imageData) {
 			
 			Objects.requireNonNull(imageData, "ImageData must not be null!");
 			
 			// Parse the parameters
 			var params = BioimageIoTools.buildPatchClassifierParams(model);
-			
+
 			// Create a builder so that we can update parameters
 			var builder = PatchClassifierParams.builder(params);
 			
@@ -310,7 +311,7 @@ public class BioimageIoCommand {
 				int[] shape = output.getShape().getShape();				
 				int[] steps = output.getShape().getShapeStep();				
 				int[] minSize = output.getShape().getShapeMin();
-				String outputAxes = BioimageIoSpec.getAxesString(output.getAxes()).toLowerCase();
+				String outputAxes = Axis.getAxesString(output.getAxes()).toLowerCase();
 				int indX = outputAxes.indexOf("x");
 				int indY = outputAxes.indexOf("y");
 				if (indX >= 0 && indY >= 0) {
@@ -485,11 +486,11 @@ public class BioimageIoCommand {
 		
 		private static final Logger logger = LoggerFactory.getLogger(BioimageIoTest.class);
 		
-		private BioimageIoModel model;
+		private Model model;
 		private Mat matInput;
 		private Mat matOutput;
 		
-		private BioimageIoTest(BioimageIoModel model) {
+		private BioimageIoTest(Model model) {
 			this.model = model;
 			var testInputs = model.getTestInputs();
 			var testOutputs = model.getTestOutputs();
