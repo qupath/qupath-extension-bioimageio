@@ -82,7 +82,7 @@ import qupath.opencv.tools.NumpyTools;
 import qupath.opencv.tools.OpenCVTools;
 
 import qupath.bioimageio.spec.Model;
-import qupath.bioimageio.spec.tensor.axes.Axis;
+import qupath.bioimageio.spec.tensor.axes.Axes;
 
 
 /**
@@ -108,14 +108,14 @@ public class BioimageIoCommand {
 		
 		// TODO: In the future consider handling .zip files
 		var file = FileChoosers.promptForFile(title,
-				FileChoosers.createExtensionFilter("BioImage Model Zoo YAML file", "*.yml", "*.yaml"));
+				FileChoosers.createExtensionFilter("Bioimage Model Zoo YAML file", "*.yml", "*.yaml"));
 		if (file == null)
 			return;
 		
 		
 		boolean showLoadPixelClassifier = false;
 		try {
-			var model = Model.parseModel(file);
+			var model = Model.parse(file);
 						
 			var params = new DnnBuilderPane(qupath, title)
 					.promptForParameters(model, qupath.getImageData());
@@ -178,7 +178,7 @@ public class BioimageIoCommand {
 	
 	static void showDialog(ImageData<?> imageData, String path) throws IOException {
 		
-		var model = Model.parseModel(Paths.get(path));
+		var model = Model.parse(Paths.get(path));
 		
 		var params = new DnnBuilderPane(QuPathGUI.getInstance(), title)
 				.promptForParameters(model, imageData);
@@ -311,7 +311,7 @@ public class BioimageIoCommand {
 				int[] shape = output.getShape().getShape();				
 				int[] steps = output.getShape().getShapeStep();				
 				int[] minSize = output.getShape().getShapeMin();
-				String outputAxes = Axis.getAxesString(output.getAxes()).toLowerCase();
+				String outputAxes = Axes.getAxesString(output.getAxes()).toLowerCase();
 				int indX = outputAxes.indexOf("x");
 				int indY = outputAxes.indexOf("y");
 				if (indX >= 0 && indY >= 0) {
