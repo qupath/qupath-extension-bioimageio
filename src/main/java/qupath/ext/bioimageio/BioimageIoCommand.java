@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import qupath.bioimageio.spec.Model;
 import qupath.bioimageio.spec.tensor.axes.Axes;
 import qupath.bioimageio.spec.tensor.axes.Axis;
+import qupath.bioimageio.spec.tensor.axes.AxisType;
 import qupath.fx.dialogs.Dialogs;
 import qupath.fx.dialogs.FileChoosers;
 import qupath.fx.utils.GridPaneUtils;
@@ -67,7 +68,6 @@ import qupath.opencv.ops.ImageOp;
 import qupath.opencv.ops.ImageOps;
 import qupath.opencv.tools.NumpyTools;
 import qupath.opencv.tools.OpenCVTools;
-import qupath.bioimageio.spec.tensor.axes.SpaceAxes.SpaceAxis;
 
 import javax.swing.SwingUtilities;
 import java.io.IOException;
@@ -123,7 +123,7 @@ public class BioimageIoCommand {
 				return;
 			}
 			var inputAxes = inputs.getFirst().getAxes();
-			var spaceAxes = Arrays.stream(inputAxes).filter(ax -> ax instanceof SpaceAxis).toList();
+			var spaceAxes = Arrays.stream(inputAxes).filter(BioimageIoCommand::isSpaceAxis).toList();
 			if (spaceAxes.size() > 2) {
 				Dialogs.showInfoNotification("BioImageIO", "This extension currently only supports 2D models.");
 				return;
@@ -185,6 +185,11 @@ public class BioimageIoCommand {
 			logger.error("Error loading model", e);
 		}
 	}
+
+	private static boolean isSpaceAxis(Axis ax) {
+		return ax.getType() == AxisType.X || ax.getType() == AxisType.Y || ax.getType() == AxisType.Z;
+	}
+
 
 	static void showDialog(ImageData<?> imageData, String path) throws IOException {
 		
