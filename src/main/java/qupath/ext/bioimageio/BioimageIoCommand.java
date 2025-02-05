@@ -21,11 +21,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.swing.SwingUtilities;
@@ -60,6 +62,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.StringConverter;
+import qupath.bioimageio.spec.tensor.axes.Axis;
+import qupath.bioimageio.spec.tensor.axes.AxisType;
 import qupath.fx.dialogs.FileChoosers;
 import qupath.fx.utils.GridPaneUtils;
 import qupath.imagej.tools.IJTools;
@@ -116,7 +120,19 @@ public class BioimageIoCommand {
 		boolean showLoadPixelClassifier = false;
 		try {
 			var model = Model.parse(file);
-						
+
+			var inputs = model.getInputs();
+			var outputs = model.getOutputs();
+			if (inputs.size() > 1 || outputs.size() > 1) {
+				Dialogs.showInfoNotification("BioImageIO", "Unable to run models with more than one input or output.");
+				return;
+			}
+			var inputAxes = inputs.getFirst().getAxes();
+			var spaceAxes = Arrays.stream(inputAxes).filter(BioimageIoCommand::isSpaceAxis).toList();
+			if (spaceAxes.size() > 2) {
+				Dialogs.showInfoNotification("BioImageIO", "This extension currently only supports 2D models.");
+				return;
+			}
 			var params = new DnnBuilderPane(qupath, title)
 					.promptForParameters(model, qupath.getImageData());
 			
@@ -174,8 +190,12 @@ public class BioimageIoCommand {
 			logger.error("Error loading model", e);
 		}
 	}
-	
-	
+
+	private static boolean isSpaceAxis(Axis ax) {
+		return ax.getType() == AxisType.X || ax.getType() == AxisType.Y || ax.getType() == AxisType.Z;
+	}
+
+
 	static void showDialog(ImageData<?> imageData, String path) throws IOException {
 		
 		var model = Model.parse(Paths.get(path));
@@ -631,6 +651,6 @@ public class BioimageIoCommand {
 		}
 		
 	}
-	
+
 
 }
