@@ -16,30 +16,6 @@
 
 package qupath.ext.bioimageio;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import javax.swing.SwingUtilities;
-
-import javafx.stage.FileChooser;
-import org.bytedeco.javacpp.PointerScope;
-import org.bytedeco.opencv.global.opencv_core;
-import org.bytedeco.opencv.opencv_core.Mat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -61,15 +37,22 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
+import org.bytedeco.javacpp.PointerScope;
+import org.bytedeco.opencv.global.opencv_core;
+import org.bytedeco.opencv.opencv_core.Mat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import qupath.bioimageio.spec.Model;
+import qupath.bioimageio.spec.tensor.axes.Axes;
 import qupath.bioimageio.spec.tensor.axes.Axis;
-import qupath.bioimageio.spec.tensor.axes.AxisType;
+import qupath.fx.dialogs.Dialogs;
 import qupath.fx.dialogs.FileChoosers;
 import qupath.fx.utils.GridPaneUtils;
 import qupath.imagej.tools.IJTools;
 import qupath.lib.common.GeneralTools;
 import qupath.lib.gui.QuPathGUI;
-import qupath.fx.dialogs.Dialogs;
 import qupath.lib.images.ImageData;
 import qupath.lib.images.servers.ColorTransforms;
 import qupath.lib.images.servers.ColorTransforms.ColorTransform;
@@ -84,9 +67,21 @@ import qupath.opencv.ops.ImageOp;
 import qupath.opencv.ops.ImageOps;
 import qupath.opencv.tools.NumpyTools;
 import qupath.opencv.tools.OpenCVTools;
+import qupath.bioimageio.spec.tensor.axes.SpaceAxes.SpaceAxis;
 
-import qupath.bioimageio.spec.Model;
-import qupath.bioimageio.spec.tensor.axes.Axes;
+import javax.swing.SwingUtilities;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 /**
@@ -128,7 +123,7 @@ public class BioimageIoCommand {
 				return;
 			}
 			var inputAxes = inputs.getFirst().getAxes();
-			var spaceAxes = Arrays.stream(inputAxes).filter(BioimageIoCommand::isSpaceAxis).toList();
+			var spaceAxes = Arrays.stream(inputAxes).filter(ax -> ax instanceof SpaceAxis).toList();
 			if (spaceAxes.size() > 2) {
 				Dialogs.showInfoNotification("BioImageIO", "This extension currently only supports 2D models.");
 				return;
@@ -190,11 +185,6 @@ public class BioimageIoCommand {
 			logger.error("Error loading model", e);
 		}
 	}
-
-	private static boolean isSpaceAxis(Axis ax) {
-		return ax.getType() == AxisType.X || ax.getType() == AxisType.Y || ax.getType() == AxisType.Z;
-	}
-
 
 	static void showDialog(ImageData<?> imageData, String path) throws IOException {
 		
