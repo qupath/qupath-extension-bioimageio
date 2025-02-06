@@ -119,13 +119,13 @@ public class BioimageIoCommand {
 			var inputs = model.getInputs();
 			var outputs = model.getOutputs();
 			if (inputs.size() > 1 || outputs.size() > 1) {
-				Dialogs.showInfoNotification("BioImageIO", "Unable to run models with more than one input or output.");
+				Dialogs.showErrorMessage("Bioimage Model Zoo extension", "Unable to run models with more than one input or output.");
 				return;
 			}
 			var inputAxes = inputs.getFirst().getAxes();
 			var spaceAxes = Arrays.stream(inputAxes).filter(BioimageIoCommand::isSpaceAxis).toList();
 			if (spaceAxes.size() > 2) {
-				Dialogs.showInfoNotification("BioImageIO", "This extension currently only supports 2D models.");
+				Dialogs.showErrorMessage("Bioimage Model Zoo extension", "This extension currently only supports 2D models.");
 				return;
 			}
 			var params = new DnnBuilderPane(qupath, title)
