@@ -539,11 +539,6 @@ class BioimageIoCommand {
 			}
 		}
 
-
-		/**
-		 *
-		 * @param params
-		 */
 		void runAndShowOutput(PatchClassifierParams params) {
 			if (matInput == null) {
 				logger.warn("Cannot run test - not input image found");
@@ -608,10 +603,7 @@ class BioimageIoCommand {
 		
 	}
 	
-	/**
-	 * Try to show ImageJ images.
-	 * @param imps The images.
-	 */
+
 	private static void tryToShowImages(Collection<? extends ImagePlus> imps) {
 		if (imps.isEmpty())
 			return;
