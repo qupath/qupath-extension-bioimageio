@@ -89,7 +89,7 @@ import java.util.stream.Collectors;
  * 
  * @author Pete Bankhead
  */
-public class BioimageIoCommand {
+class BioimageIoCommand {
 	
 	private final static Logger logger = LoggerFactory.getLogger(BioimageIoCommand.class);
 	
@@ -103,7 +103,7 @@ public class BioimageIoCommand {
 	/**
 	 * Show a prompt to select a bioimage.io directory and show the prediction for the current image.
 	 */
-	public void promptForModel() {
+	void promptForModel() {
 		
 		// TODO: In the future consider handling .zip files
 		var file = FileChoosers.promptForFile(title,
@@ -123,8 +123,10 @@ public class BioimageIoCommand {
 				return;
 			}
 			var inputAxes = inputs.getFirst().getAxes();
-			var spaceAxes = Arrays.stream(inputAxes).filter(BioimageIoCommand::isSpaceAxis).toList();
-			if (spaceAxes.size() > 2) {
+			long nSpaceAxes = Arrays.stream(inputAxes)
+					.filter(BioimageIoCommand::isSpaceAxis)
+					.count();
+			if (nSpaceAxes > 2) {
 				Dialogs.showErrorMessage("Bioimage Model Zoo extension", "This extension currently only supports 2D models.");
 				return;
 			}
@@ -522,7 +524,7 @@ public class BioimageIoCommand {
 			}
 		}
 		
-		public boolean hasInput() {
+		boolean hasInput() {
 			return matInput != null;
 		}
 		
@@ -536,10 +538,13 @@ public class BioimageIoCommand {
 				return null;
 			}
 		}
-		
-		
-		
-		public void runAndShowOutput(PatchClassifierParams params) {
+
+
+		/**
+		 *
+		 * @param params
+		 */
+		void runAndShowOutput(PatchClassifierParams params) {
 			if (matInput == null) {
 				logger.warn("Cannot run test - not input image found");
 			}
