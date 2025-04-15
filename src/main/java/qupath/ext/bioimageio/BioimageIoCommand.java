@@ -176,7 +176,7 @@ class BioimageIoCommand {
 			
 			if (showLoadPixelClassifier) {
 				// Try to show 'Load pixel classifier' dialog
-				var action = qupath.lookupActionByText("Load pixel classifier");
+				var action = qupath.lookupActionByText("Load pixel classifier...");
 				if (action != null && !action.isDisabled())
 					action.handle(new ActionEvent());
 			}
