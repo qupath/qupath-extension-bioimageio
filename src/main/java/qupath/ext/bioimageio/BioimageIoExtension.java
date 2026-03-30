@@ -16,24 +16,35 @@
 
 package qupath.ext.bioimageio;
 
+import javafx.beans.property.StringProperty;
 import org.controlsfx.control.action.Action;
 
 import qupath.lib.common.Version;
 import qupath.lib.gui.QuPathGUI;
+import qupath.lib.gui.UserDirectoryManager;
 import qupath.lib.gui.actions.annotations.ActionMenu;
 import qupath.lib.gui.extensions.GitHubProject;
 import qupath.lib.gui.extensions.QuPathExtension;
+import qupath.lib.gui.prefs.PathPrefs;
 import qupath.lib.gui.tools.MenuTools;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Extension to make some bioimage.io models available within QuPath.
- * Currently at an early stage of development and <b>very</b> limited...
+ * Currently, at an early stage of development and <b>very</b> limited...
  */
 public class BioimageIoExtension implements QuPathExtension, GitHubProject {
 
 	private boolean isInstalled = false;
-	
-//	@ActionConfig(value = "action", bundle = "qupath/ext/bioimageio/strings")
+
+	StringProperty modelDir = PathPrefs.createPersistentPreference(
+			"qupath.bioimageio.path",
+			getUserDir().resolve("bioimageio").toString());
+
+
+	//	@ActionConfig(value = "action", bundle = "qupath/ext/bioimageio/strings")
 	@ActionMenu("Extensions>BioImage Model Zoo...>Import pixel classifier (bioimage.io)")
 	private Action actionBioimageIO;
 	
@@ -51,15 +62,11 @@ public class BioimageIoExtension implements QuPathExtension, GitHubProject {
 	                actionBioimageIO
 	        );
 		   // TODO: Support drag & drop if we have a sensible dialog to use
-//		   qupath.getDefaultDragDropListener().addFileDropHandler((v, files) -> {
-//			   if (files.size() == 1 && files.get(0).isDirectory()) {
-//				   var dir = files.get(0);
-//				   if (new File(dir, SpecificationWriter.getModelFileName()).exists()) {
-//					   
-//				   }
-//			   }
-//		   });
     }
+
+	public Path getModelPath() {
+		return Path.of(modelDir.get());
+	}
 
     @Override
     public String getName() {
@@ -79,6 +86,12 @@ public class BioimageIoExtension implements QuPathExtension, GitHubProject {
 	@Override
 	public Version getQuPathVersion() {
 		return Version.parse("0.6.0");
+	}
+
+	private static Path getUserDir() {
+		Path userPath = UserDirectoryManager.getInstance().getUserPath();
+		Path cachePath = Paths.get(System.getProperty("user.dir"), ".cache", "QuPath");
+		return userPath == null || userPath.toString().isEmpty() ?  cachePath : userPath;
 	}
 
 }
