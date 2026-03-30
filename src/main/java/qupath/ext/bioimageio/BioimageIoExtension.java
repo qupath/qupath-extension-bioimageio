@@ -64,6 +64,7 @@ public class BioimageIoExtension implements QuPathExtension, GitHubProject {
 		   // TODO: Support drag & drop if we have a sensible dialog to use
     }
 
+	// todo store imported and working models here
 	public Path getModelPath() {
 		return Path.of(modelDir.get());
 	}

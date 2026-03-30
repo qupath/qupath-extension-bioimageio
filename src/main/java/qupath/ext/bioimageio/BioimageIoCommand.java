@@ -299,6 +299,7 @@ class BioimageIoCommand {
 			addDescriptionRow(pane, "The pixel size at which the model will be applied", row++);
 			var factoryDownsample = new SpinnerValueFactory.DoubleSpinnerValueFactory(1.0, Double.MAX_VALUE, 1.0, 0.1);
 			var spinnerDownsample = new Spinner<>(factoryDownsample);
+			spinnerDownsample.setEditable(true);
 			GridPaneUtils.setToExpandGridPaneWidth(spinnerDownsample);
 			addLabeledRow(pane, "Downsample", row++, "Choose downsample for input image", spinnerDownsample);
 			var labelResolution = new Label(calToString(cal, 1));
@@ -380,8 +381,10 @@ class BioimageIoCommand {
 				availableClasses = qupath.getAvailablePathClasses();
 			
 			var outputClasses = new LinkedHashMap<>(params.getOutputClasses());
+			ObservableList<PathClass> classList = FXCollections.observableArrayList(outputClasses.values());
 			for (int c = 1; c <= nOutputClasses; c++) {
-				var comboOutputClasses = new ComboBox<>(availableClasses);
+				var comboOutputClasses = new ComboBox<>(classList);
+				comboOutputClasses.getItems().addAll(availableClasses);
 				comboOutputClasses.setEditable(true);
 				comboOutputClasses.setConverter(new PathClassStringConverter());
 				if (c <= availableClasses.size())
