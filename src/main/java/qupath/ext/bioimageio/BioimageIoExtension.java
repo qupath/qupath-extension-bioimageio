@@ -20,6 +20,7 @@ import org.controlsfx.control.action.Action;
 
 import qupath.lib.common.Version;
 import qupath.lib.gui.QuPathGUI;
+import qupath.lib.gui.actions.annotations.ActionConfig;
 import qupath.lib.gui.actions.annotations.ActionMenu;
 import qupath.lib.gui.extensions.GitHubProject;
 import qupath.lib.gui.extensions.QuPathExtension;
@@ -27,16 +28,17 @@ import qupath.lib.gui.tools.MenuTools;
 
 /**
  * Extension to make some bioimage.io models available within QuPath.
- * Currently at an early stage of development and <b>very</b> limited...
+ * Currently, at an early stage of development and <b>very</b> limited...
  */
 public class BioimageIoExtension implements QuPathExtension, GitHubProject {
 
 	private boolean isInstalled = false;
 	
-//	@ActionConfig(value = "action", bundle = "qupath/ext/bioimageio/strings")
-	@ActionMenu("Extensions>BioImage Model Zoo...>Import pixel classifier (bioimage.io)")
+
+//	@ActionMenu("Extensions>BioImage Model Zoo...>Import pixel classifier (bioimage.io)")
+	@ActionConfig(value = "action", bundle = "qupath/ext/bioimageio/strings")
 	private Action actionBioimageIO;
-	
+
 	   @Override
     public void installExtension(QuPathGUI qupath) {
 		   if (isInstalled)
@@ -50,15 +52,6 @@ public class BioimageIoExtension implements QuPathExtension, GitHubProject {
 	                qupath.getMenu("Extensions>BioImage Model Zoo", true),
 	                actionBioimageIO
 	        );
-		   // TODO: Support drag & drop if we have a sensible dialog to use
-//		   qupath.getDefaultDragDropListener().addFileDropHandler((v, files) -> {
-//			   if (files.size() == 1 && files.get(0).isDirectory()) {
-//				   var dir = files.get(0);
-//				   if (new File(dir, SpecificationWriter.getModelFileName()).exists()) {
-//					   
-//				   }
-//			   }
-//		   });
     }
 
     @Override

@@ -19,6 +19,7 @@ package qupath.ext.bioimageio;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import java.util.ResourceBundle;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -26,6 +27,7 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
@@ -38,6 +40,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import org.bytedeco.javacpp.PointerScope;
 import org.bytedeco.opencv.global.opencv_core;
@@ -92,10 +95,11 @@ import java.util.stream.Collectors;
 class BioimageIoCommand {
 	
 	private final static Logger logger = LoggerFactory.getLogger(BioimageIoCommand.class);
-	
+	private static final ResourceBundle resources = ResourceBundle.getBundle("qupath.ext.bioimageio.strings");
+
 	private final QuPathGUI qupath;
 	private static final String title = "Bioimage.io to Pixel Classifier";
-	
+
 	BioimageIoCommand(QuPathGUI qupath) {
 		this.qupath = qupath;
 	}
@@ -130,56 +134,64 @@ class BioimageIoCommand {
 				Dialogs.showErrorMessage("Bioimage Model Zoo extension", "This extension currently only supports 2D models.");
 				return;
 			}
-			var params = new DnnBuilderPane(qupath, title)
-					.promptForParameters(model, qupath.getImageData());
-			
-			if (params == null)
-				return;
-			
-			var classifier = PatchClassifierParams.buildPixelClassifier(params);
-			if (classifier == null) {
-				logger.info("No pixel classifier created!");
-				return;
-			}
-			
-			// Try to save in the current project
-			var project = qupath.getProject();
-			if (project != null) {
-				var name = Dialogs.showInputDialog(title, "Choose classifier name", model.getName());
-				if (name != null) {
-					Dialogs.showInfoNotification(title, "Pixel classifier saved as " + name);
-					project.getPixelClassifiers().put(name, classifier);
-					showLoadPixelClassifier = true;
-				}
-			} else {
-				var fileSaved = FileChoosers.promptToSaveFile(title,
-						FileChoosers.promptToSaveFile(new FileChooser.ExtensionFilter("Pixel classifier", "*.json")));
-				if (fileSaved != null) {
-					PixelClassifiers.writeClassifier(classifier, fileSaved.toPath());
-					Dialogs.showInfoNotification(title, "Pixel classifier saved to \n" + fileSaved.getAbsolutePath());
-				}
-			}
-			
+			var pane = BioimageIoPane.createInstance(qupath, model);
+			Stage s = new Stage();
+			s.setTitle(resources.getString("title"));
+			Scene ss = new Scene(pane);
+			s.setScene(ss);
+			s.show();
+			return;
 
-			// Offer to show the prediction in the current image, if it's small enough
-			var imageData = qupath.getImageData();
-			if (imageData != null) {
-				var classifierServer = PixelClassifierTools.createPixelClassificationServer(imageData, classifier);
-				int maxSize = 4096;
-				if (classifierServer.getWidth() < maxSize && classifierServer.getHeight() < maxSize) {
-					if (Dialogs.showYesNoDialog(title, "Apply prediction & open in ImageJ?")) {
-						var imp = IJTools.extractHyperstack(classifierServer, null);
-						tryToShowImages(Collections.singleton(imp));
-					}
-				}
-			}
-			
-			if (showLoadPixelClassifier) {
-				// Try to show 'Load pixel classifier' dialog
-				var action = qupath.lookupActionByText("Load pixel classifier...");
-				if (action != null && !action.isDisabled())
-					action.handle(new ActionEvent());
-			}
+//			var params = new DnnBuilderPane(qupath, title)
+//					.promptForParameters(model, qupath.getImageData());
+//
+//			if (params == null)
+//				return;
+//
+//			var classifier = PatchClassifierParams.buildPixelClassifier(params);
+//			if (classifier == null) {
+//				logger.info("No pixel classifier created!");
+//				return;
+//			}
+//
+//			// Try to save in the current project
+//			var project = qupath.getProject();
+//			if (project != null) {
+//				var name = Dialogs.showInputDialog(title, "Choose classifier name", model.getName());
+//				if (name != null) {
+//					Dialogs.showInfoNotification(title, "Pixel classifier saved as " + name);
+//					project.getPixelClassifiers().put(name, classifier);
+//					showLoadPixelClassifier = true;
+//				}
+//			} else {
+//				var fileSaved = FileChoosers.promptToSaveFile(title,
+//						FileChoosers.promptToSaveFile(new FileChooser.ExtensionFilter("Pixel classifier", "*.json")));
+//				if (fileSaved != null) {
+//					PixelClassifiers.writeClassifier(classifier, fileSaved.toPath());
+//					Dialogs.showInfoNotification(title, "Pixel classifier saved to \n" + fileSaved.getAbsolutePath());
+//				}
+//			}
+//
+//
+//			// Offer to show the prediction in the current image, if it's small enough
+//			var imageData = qupath.getImageData();
+//			if (imageData != null) {
+//				var classifierServer = PixelClassifierTools.createPixelClassificationServer(imageData, classifier);
+//				int maxSize = 4096;
+//				if (classifierServer.getWidth() < maxSize && classifierServer.getHeight() < maxSize) {
+//					if (Dialogs.showYesNoDialog(title, "Apply prediction & open in ImageJ?")) {
+//						var imp = IJTools.extractHyperstack(classifierServer, null);
+//						tryToShowImages(Collections.singleton(imp));
+//					}
+//				}
+//			}
+//
+//			if (showLoadPixelClassifier) {
+//				// Try to show 'Load pixel classifier' dialog
+//				var action = qupath.lookupActionByText("Load pixel classifier...");
+//				if (action != null && !action.isDisabled())
+//					action.handle(new ActionEvent());
+//			}
 
 			
 		} catch (Exception e) {
@@ -292,33 +304,30 @@ class BioimageIoCommand {
 					builder.inputChannels(inputChannels);
 				});
 			}
-			
+
+			double pixelSize = 1; // todo get current pixel size
+
 			// Handle pixel size
 			var cal = server.getPixelCalibration();
 			addTitleRow(pane, "Input resolution", row++);
-			addDescriptionRow(pane, "The pixel size at which the model will be applied", row++);
-			var factoryDownsample = new SpinnerValueFactory.DoubleSpinnerValueFactory(1.0, Double.MAX_VALUE, 1.0, 0.1);
-			var spinnerDownsample = new Spinner<>(factoryDownsample);
-			spinnerDownsample.setEditable(true);
-			GridPaneUtils.setToExpandGridPaneWidth(spinnerDownsample);
-			addLabeledRow(pane, "Downsample", row++, "Choose downsample for input image", spinnerDownsample);
+			addDescriptionRow(pane, "The pixel size in microns at which the model will be applied", row++);
+			var factoryPixelSize = new SpinnerValueFactory.DoubleSpinnerValueFactory(1.0, Double.MAX_VALUE, pixelSize, 0.1);
+			var spinnerPixelSize = new Spinner<>(factoryPixelSize);
+			spinnerPixelSize.setEditable(true);
+			GridPaneUtils.setToExpandGridPaneWidth(spinnerPixelSize);
+			addLabeledRow(pane, "Pixel size", row++, "Choose pixel size for input image", spinnerPixelSize);
 			var labelResolution = new Label(calToString(cal, 1));
 			labelResolution.textProperty().bind(Bindings.createStringBinding(() -> {
-				Double scale = spinnerDownsample.getValue();
+				Double scale = spinnerPixelSize.getValue();
 				if (scale == null || scale < 1)
 					scale = 1.0;
 				return calToString(cal, scale);
-			}, spinnerDownsample.valueProperty()));
-			spinnerDownsample.valueProperty().addListener((v, o, n) -> {
-				if (n >= 1.0)
-					builder.inputResolution(cal, n);
-			});
-			addLabeledRow(pane, "Calculated resolution", row++, "Input resolution, calculated from the current image and downsample value", labelResolution);
-			
+			}, spinnerPixelSize.valueProperty()));
+
 			// Handle tile shape
 			addTitleRow(pane, "Input tile shape", row++);
 			addDescriptionRow(pane, "The size of each input tile when processing large images", row++);
-			
+
 			// Use the patch values by default, but try to offer all the options from the model spec
 			int width = params.getPatchWidth();
 			int height = params.getPatchHeight();
@@ -401,7 +410,8 @@ class BioimageIoCommand {
 			// Handle output type
 			addTitleRow(pane, "Output type", row++);
 			addDescriptionRow(pane, "The output type of the model", row++);
-			
+
+			// todo: does feature/density/channel ever make sense?
 			var comboOutputType = new ComboBox<ChannelType>();
 			comboOutputType.getItems().setAll(ChannelType.values());
 			comboOutputType.getSelectionModel().select(params.getOutputChannelType());
