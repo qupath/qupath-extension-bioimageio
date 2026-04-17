@@ -13,6 +13,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -66,6 +67,8 @@ public class BioimageIoPane extends BorderPane {
     private VBox tileShapeOptionsBox;
     @FXML
     private Spinner<Double> pixelSizeSpinner;
+    @FXML
+    private Button imageJButton;
 
 
     public static PatchClassifierParams createDialog(QuPathGUI qupath, Model model) {
@@ -111,6 +114,21 @@ public class BioimageIoPane extends BorderPane {
         configurePixelSize(model);
         configureOutputClasses();
         configureOutputTypes();
+        configureImageJButton();
+    }
+
+    private void configureImageJButton() {
+        var tester = new BioimageIoCommand.BioimageIoTest(model);
+        if (tester.hasInput()) {
+            var btnTest = new Button("Show test images in ImageJ");
+            btnTest.setOnAction(e -> tester.runAndShowOutput(params));
+            GridPaneUtils.addGridRow(pane, row++, 0,
+                    "Attempt to run prediction on the test image, if available.\n"
+                            + "This checks the model runes, but does not use most of the customizations here\n"
+                            + "because the channel input is fixed.",
+                    btnTest, btnTest);
+            GridPaneUtils.setToExpandGridPaneWidth(btnTest);
+        }
     }
 
     private void configurePixelSize(Model model) {

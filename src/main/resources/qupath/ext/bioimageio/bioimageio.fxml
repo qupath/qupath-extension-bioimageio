@@ -83,7 +83,7 @@
                 </VBox>
             </TitledPane>
             <VBox styleClass="standard-spacing,standard-padding">
-                <Button text="%ui.section.imagej" maxWidth="Infinity">
+                <Button fx:id="imageJButton" text="%ui.section.imagej" maxWidth="Infinity">
                     <tooltip>
                         <Tooltip text="%tooltip.section.imagej"/>
                     </tooltip>

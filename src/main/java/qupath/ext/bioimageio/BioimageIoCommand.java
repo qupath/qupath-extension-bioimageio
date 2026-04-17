@@ -20,28 +20,8 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import java.util.ResourceBundle;
-import javafx.beans.binding.Bindings;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
-import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Separator;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import org.bytedeco.javacpp.PointerScope;
 import org.bytedeco.opencv.global.opencv_core;
@@ -49,23 +29,13 @@ import org.bytedeco.opencv.opencv_core.Mat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.bioimageio.spec.Model;
-import qupath.bioimageio.spec.tensor.axes.Axes;
 import qupath.bioimageio.spec.tensor.axes.Axis;
 import qupath.bioimageio.spec.tensor.axes.AxisType;
 import qupath.fx.dialogs.Dialogs;
 import qupath.fx.dialogs.FileChoosers;
-import qupath.fx.utils.FXUtils;
-import qupath.fx.utils.GridPaneUtils;
 import qupath.imagej.tools.IJTools;
-import qupath.lib.common.GeneralTools;
 import qupath.lib.gui.QuPathGUI;
-import qupath.lib.images.ImageData;
-import qupath.lib.images.servers.ColorTransforms;
-import qupath.lib.images.servers.ColorTransforms.ColorTransform;
-import qupath.lib.images.servers.ImageServerMetadata.ChannelType;
-import qupath.lib.images.servers.PixelCalibration;
 import qupath.lib.objects.classes.PathClass;
-import qupath.opencv.ml.BioimageIoTools;
 import qupath.opencv.ml.PatchClassifierParams;
 import qupath.opencv.ml.pixel.PixelClassifierTools;
 import qupath.opencv.ml.pixel.PixelClassifiers;
@@ -83,10 +53,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 
 /**
@@ -101,7 +69,6 @@ class BioimageIoCommand {
 
 	private final QuPathGUI qupath;
 	private static final String title = "Bioimage.io to Pixel Classifier";
-	private Stage stage;
 
 	BioimageIoCommand(QuPathGUI qupath) {
 		this.qupath = qupath;
@@ -140,9 +107,6 @@ class BioimageIoCommand {
 
 			var params = BioimageIoPane.createDialog(qupath, model);
 
-//			var params = new DnnBuilderPane(qupath, title)
-//					.promptForParameters(model, qupath.getImageData());
-//
 			if (params == null)
 				return;
 
@@ -203,300 +167,12 @@ class BioimageIoCommand {
 		return ax.getType() == AxisType.X || ax.getType() == AxisType.Y || ax.getType() == AxisType.Z;
 	}
 
-	static class DnnBuilderPane {
-		
-		private final QuPathGUI qupath;
-		private final String title;
-		
-		private static final Font font = Font.font("Arial");
-		
-		private DnnBuilderPane(QuPathGUI qupath, String title) {
-			this.qupath = qupath;
-			this.title = title;
-		}
 
-		private PatchClassifierParams promptForParameters(Model model, ImageData<?> imageData) {
-			
-			Objects.requireNonNull(imageData, "ImageData must not be null!");
-			
-			// Parse the parameters
-			var params = BioimageIoTools.buildPatchClassifierParams(model);
-
-			// Create a builder so that we can update parameters
-			var builder = PatchClassifierParams.builder(params);
-			
-			int nChannels = params.getInputChannels().size();
-			int nOutputClasses = params.getOutputClasses().size();
-
-			GridPane pane = new GridPane();
-			pane.setHgap(5);
-			pane.setVgap(5);
-			
-			int row = 0;
-			
-			addTitleRow(pane, "Experimental - use with caution!", row++);
-			addDescriptionRow(pane,
-					"This command tries to create a QuPath "
-					+ "pixel classifier from a BioImage Model Zoo spec."
-					, row++);
-			addDescriptionRow(pane,
-					"It may not work in all (or even most) cases."
-					, row++);
-			addDescriptionRow(pane,
-					"It can also sometimes give different results to "
-					+ "other software, because of different per-tile normalization."
-					, row++);
-			
-			addSeparatorRow(pane, row++);
-
-			// Handle input channels & their order
-			addTitleRow(pane, "Input channels", row++);
-			addDescriptionRow(pane, "The image channels provided as input to the model", row++);
-			
-			var server = imageData.getServer();
-			ObservableList<ColorTransform> availableChannels = FXCollections.observableArrayList(
-						server.getMetadata().getChannels()
-							.stream()
-							.map(c -> ColorTransforms.createChannelExtractor(c.getName()))
-							.collect(Collectors.toList()));				
-			availableChannels.addAll(
-					ColorTransforms.createMeanChannelTransform(),
-					ColorTransforms.createMaximumChannelTransform(),
-					ColorTransforms.createMinimumChannelTransform()
-					);
-			
-			List<ColorTransform> inputChannels = new ArrayList<>();
-			for (int c = 1; c <= nChannels; c++) {
-				var comboChannel = new ComboBox<>(availableChannels);
-				comboChannel.getSelectionModel().select((c-1) % availableChannels.size());
-				inputChannels.add(comboChannel.getSelectionModel().getSelectedItem());
-
-				GridPaneUtils.setToExpandGridPaneWidth(comboChannel);
-				addLabeledRow(pane, "Channel "+c, row++, "Choose channel " + c + " input", comboChannel);
-				
-				int ind = c - 1;
-				comboChannel.getSelectionModel().selectedItemProperty().addListener((v, o, n) -> {
-					if (n == null) {
-						logger.warn("Cannot set channel to null");
-						return;
-					}
-					inputChannels.set(ind, n);
-					builder.inputChannels(inputChannels);
-				});
-			}
-
-			double pixelSize = 1; // todo get current pixel size
-
-			// Handle pixel size
-			var cal = server.getPixelCalibration();
-			addTitleRow(pane, "Input resolution", row++);
-			addDescriptionRow(pane, "The pixel size in microns at which the model will be applied", row++);
-			var factoryPixelSize = new SpinnerValueFactory.DoubleSpinnerValueFactory(1.0, Double.MAX_VALUE, pixelSize, 0.1);
-			var spinnerPixelSize = new Spinner<>(factoryPixelSize);
-			spinnerPixelSize.setEditable(true);
-			GridPaneUtils.setToExpandGridPaneWidth(spinnerPixelSize);
-			addLabeledRow(pane, "Pixel size", row++, "Choose pixel size for input image", spinnerPixelSize);
-			var labelResolution = new Label(calToString(cal, 1));
-			labelResolution.textProperty().bind(Bindings.createStringBinding(() -> {
-				Double scale = spinnerPixelSize.getValue();
-				if (scale == null || scale < 1)
-					scale = 1.0;
-				return calToString(cal, scale);
-			}, spinnerPixelSize.valueProperty()));
-
-			// Handle tile shape
-			addTitleRow(pane, "Input tile shape", row++);
-			addDescriptionRow(pane, "The size of each input tile when processing large images", row++);
-
-			// Use the patch values by default, but try to offer all the options from the model spec
-			int width = params.getPatchWidth();
-			int height = params.getPatchHeight();
-			int stepWidth = 0;
-			int stepHeight = 0;
-			if (model.getOutputs().size() == 1) {
-				var output = model.getOutputs().get(0);
-				int[] shape = output.getShape().getShape();				
-				int[] steps = output.getShape().getShapeStep();				
-				int[] minSize = output.getShape().getShapeMin();
-				String outputAxes = Axes.getAxesString(output.getAxes()).toLowerCase();
-				int indX = outputAxes.indexOf("x");
-				int indY = outputAxes.indexOf("y");
-				if (indX >= 0 && indY >= 0) {
-					if (minSize.length > 0) {
-						width = minSize[indX];
-						height = minSize[indY];
-					} else if (shape.length > 0) {
-						width = shape[indX];
-						height = shape[indY];
-					}
-					if (steps.length > 0) {
-						stepWidth = steps[indX];
-						stepHeight = steps[indY];
-					}
-				}
-			}
-			if (stepWidth > 0 || stepHeight > 0) {
-				int maxTile = Math.max(width, height) * 8;
-				var factoryWidth = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, maxTile);
-				factoryWidth.setValue(params.getPatchWidth());
-				factoryWidth.setAmountToStepBy(stepWidth);
-				var spinnerWidth = new Spinner<>(factoryWidth);
-				
-				var factoryHeight = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, maxTile);
-				factoryHeight.setValue(params.getPatchHeight());
-				// TODO: Incorporate step size, if available
-				factoryHeight.setAmountToStepBy(stepHeight);
-				var spinnerHeight = new Spinner<>(factoryHeight);
-
-				GridPaneUtils.setToExpandGridPaneWidth(spinnerWidth, spinnerHeight);
-				addLabeledRow(pane, "Tile width", row++, "Choose input tile width in pixels", spinnerWidth);
-				addLabeledRow(pane, "Tile height", row++, "Choose input tile height in pixels", spinnerHeight);
-				spinnerWidth.setEditable(false);
-				spinnerHeight.setEditable(false);
-				spinnerWidth.valueProperty().addListener((v, o, n) -> builder.patchSize(spinnerWidth.getValue(), spinnerHeight.getValue()));
-				spinnerHeight.valueProperty().addListener((v, o, n) -> builder.patchSize(spinnerWidth.getValue(), spinnerHeight.getValue()));
-				GridPaneUtils.setToExpandGridPaneWidth(spinnerWidth, spinnerHeight, labelResolution);
-			} else {
-				addDescriptionRow(pane, String.format("Tile size fixed to %d x %d", width, height), row++);
-			}
-			
-			// Handle output
-			addTitleRow(pane, "Output classes", row++);
-			addDescriptionRow(pane, "The classifications corresponding to the model output", row++);
-			GridPaneUtils.setToExpandGridPaneWidth(labelResolution);
-
-			ObservableList<PathClass> availableClasses = FXCollections.observableArrayList();
-			if (qupath != null)
-				availableClasses = qupath.getAvailablePathClasses();
-			
-			var outputClasses = new LinkedHashMap<>(params.getOutputClasses());
-			ObservableList<PathClass> classList = FXCollections.observableArrayList(outputClasses.values());
-			for (int c = 1; c <= nOutputClasses; c++) {
-				var comboOutputClasses = new ComboBox<>(classList);
-				comboOutputClasses.getItems().addAll(availableClasses);
-				comboOutputClasses.setEditable(true);
-				comboOutputClasses.setConverter(new PathClassStringConverter());
-				if (c <= availableClasses.size())
-					comboOutputClasses.getSelectionModel().select(c-1);
-				GridPaneUtils.setToExpandGridPaneWidth(comboOutputClasses);
-				addLabeledRow(pane, "Class "+c, row++, "Choose output classification for channel " + c, comboOutputClasses);
-				int ind = c - 1;
-				comboOutputClasses.getSelectionModel().selectedItemProperty().addListener((v, o, n) -> {
-					outputClasses.put(ind, n);
-					builder.outputClasses(outputClasses);
-				});
-			}
-			
-			// Handle output type
-			addTitleRow(pane, "Output type", row++);
-			addDescriptionRow(pane, "The output type of the model", row++);
-
-			// todo: does feature/density/channel ever make sense?
-			var comboOutputType = new ComboBox<ChannelType>();
-			comboOutputType.getItems().setAll(ChannelType.values());
-			comboOutputType.getSelectionModel().select(params.getOutputChannelType());
-			comboOutputType.getSelectionModel().selectedItemProperty().addListener((v, o, n) -> {
-				if (n != null)
-					builder.outputChannelType(n);
-				else
-					logger.warn("Output type cannot be null");
-			});
-
-			GridPaneUtils.setToExpandGridPaneWidth(comboOutputType);
-			addLabeledRow(pane, "Output", row++, "Choose output type", comboOutputType);
-			
-			var tester = new BioimageIoTest(model);
-			if (tester.hasInput()) {
-				var btnTest = new Button("Show test images in ImageJ");
-				btnTest.setOnAction(e -> tester.runAndShowOutput(params));
-				GridPaneUtils.addGridRow(pane, row++, 0,
-						"Attempt to run prediction on the test image, if available.\n"
-								+ "This checks the model runes, but does not use most of the customizations here\n"
-								+ "because the channel input is fixed.",
-						btnTest, btnTest);
-				GridPaneUtils.setToExpandGridPaneWidth(btnTest);
-			}
-			
-			var scrollPane = new ScrollPane(pane);
-			scrollPane.setFitToWidth(true);
-			var result = Dialogs.builder()
-					.title(title)
-					.content(scrollPane)
-					.buttons(ButtonType.CANCEL, ButtonType.APPLY)
-					.prefHeight(500) // Setting height & resizable deal with dialogs that are too 'tall'
-					.prefWidth(400)
-					.resizable()
-					.showAndWait()
-					.orElse(ButtonType.CANCEL);
-				
-			tester.close();
-			
-			if (result.equals(ButtonType.CANCEL))
-				return null;
-			
-			return builder.build();
-		}
-		
-		
-		private static String calToString(PixelCalibration cal, double downsample) {
-			int ndp = 4;
-			return String.format("%s %s x %s %s",
-					GeneralTools.formatNumber(cal.getPixelWidth().doubleValue() * downsample, ndp), 
-					cal.getPixelWidthUnit(),
-					GeneralTools.formatNumber(cal.getPixelHeight().doubleValue() * downsample, ndp),
-					cal.getPixelHeightUnit());
-		}
-		
-		private static void addSeparatorRow(GridPane pane, int row) {
-			var sep = new Separator(Orientation.HORIZONTAL);
-			GridPane.setColumnSpan(sep, GridPane.REMAINING);
-			GridPaneUtils.setToExpandGridPaneWidth(sep);
-			GridPaneUtils.addGridRow(pane, row, 0, null, sep, sep);
-		}
-		
-		private static void addTitleRow(GridPane pane, String labelText, int row) {
-			addTextRow(pane, labelText, row, true);
-		}
-		
-		private static void addDescriptionRow(GridPane pane, String labelText, int row) {
-			addTextRow(pane, labelText, row, false);
-		}
-		
-		private static void addTextRow(GridPane pane, String labelText, int row, boolean isTitle) {
-			var label = new Label(labelText);
-			if (isTitle) {
-				label.setFont(Font.font(font.getFamily(), FontWeight.BOLD, font.getSize()));
-				label.setPadding(new Insets(10, 0, 0, 0));
-			} else
-				label.setWrapText(true);
-			pane.add(label, 0, row, GridPane.REMAINING, 1);
-		}
-		
-		private static void addLabeledRow(GridPane pane, String labelText, int row, String tooltip, Node... nodes) {
-			var label = new Label(labelText);
-			if (nodes.length == 0) {
-				GridPaneUtils.addGridRow(pane, row, 0, tooltip, label);
-			} else {
-				label.setLabelFor(nodes[0]);
-				if (nodes.length == 1)
-					GridPaneUtils.addGridRow(pane, row, 0, tooltip, label, nodes[0]);
-				else {
-					var nodes2 = new Node[nodes.length+1];
-					nodes2[0] = label;
-					System.arraycopy(nodes, 0, nodes2, 1, nodes.length);
-					GridPaneUtils.addGridRow(pane, row, 0, tooltip, nodes2);
-				}
-			}
-		}
-
-	}
-	
-	
 	static class BioimageIoTest implements AutoCloseable {
 		
 		private static final Logger logger = LoggerFactory.getLogger(BioimageIoTest.class);
 		
-		private Model model;
+		private final Model model;
 		private Mat matInput;
 		private Mat matOutput;
 		
@@ -508,11 +184,11 @@ class BioimageIoCommand {
 			if (baseUri == null)
 				return;
 			if (!testInputs.isEmpty()) {
-				var pathInput = Paths.get(baseUri.resolve(testInputs.get(0)));
+				var pathInput = Paths.get(baseUri.resolve(testInputs.getFirst()));
 				matInput = tryToReadMat(pathInput);
 			}
 			if (!testOutputs.isEmpty()) {
-				var pathOutput = Paths.get(baseUri.resolve(testOutputs.get(0)));
+				var pathOutput = Paths.get(baseUri.resolve(testOutputs.getFirst()));
 				matOutput = tryToReadMat(pathOutput);
 			}
 		}
