@@ -40,7 +40,6 @@
                         </HBox>
                     </VBox>
                     <VBox fx:id="tileShapeOptionsBox">
-    <!--                    todo: create tile options, show and hide as appropriate -->
                         <Label text="%ui.section.input-tile-shape" styleClass="bioimageio-subtitle"/>
                         <Label fx:id="fixedTileLabel" text="%ui.options.input-tile-shape-fixed" />
                         <VBox fx:id="tileSpinnerBox">

@@ -154,7 +154,6 @@ public class BioimageIoPane extends BorderPane {
         double defaultValue = (xsize + ysize) / 2;
         pixelSizeSpinner.getValueFactory().setValue(defaultValue);
 
-        // todo consider number of decimal places
         DecimalFormat format = new DecimalFormat("0.000");
         pixelSizeSpinner.getValueFactory().setConverter(new StringConverter<>() {
             @Override
@@ -309,7 +308,6 @@ public class BioimageIoPane extends BorderPane {
 
         tileWidthSpinner.valueProperty().addListener((v, o, n) -> builder.patchSize(tileWidthSpinner.getValue(), tileHeightSpinner.getValue()));
         tileHeightSpinner.valueProperty().addListener((v, o, n) -> builder.patchSize(tileWidthSpinner.getValue(), tileHeightSpinner.getValue()));
-        GridPaneUtils.setToExpandGridPaneWidth(tileWidthSpinner, tileHeightSpinner); // todo replace these calls with FXML settings
     }
 
     private void configureOutputTypes() {
@@ -326,7 +324,6 @@ public class BioimageIoPane extends BorderPane {
             else
                 logger.warn("Output type cannot be null");
         });
-        GridPaneUtils.setToExpandGridPaneWidth(outputTypeCombo); // todo replaceme
     }
 
 }
