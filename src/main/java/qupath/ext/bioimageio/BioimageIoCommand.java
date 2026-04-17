@@ -36,6 +36,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -53,6 +54,7 @@ import qupath.bioimageio.spec.tensor.axes.Axis;
 import qupath.bioimageio.spec.tensor.axes.AxisType;
 import qupath.fx.dialogs.Dialogs;
 import qupath.fx.dialogs.FileChoosers;
+import qupath.fx.utils.FXUtils;
 import qupath.fx.utils.GridPaneUtils;
 import qupath.imagej.tools.IJTools;
 import qupath.lib.common.GeneralTools;
@@ -99,6 +101,7 @@ class BioimageIoCommand {
 
 	private final QuPathGUI qupath;
 	private static final String title = "Bioimage.io to Pixel Classifier";
+	private Stage stage;
 
 	BioimageIoCommand(QuPathGUI qupath) {
 		this.qupath = qupath;
@@ -134,64 +137,59 @@ class BioimageIoCommand {
 				Dialogs.showErrorMessage("Bioimage Model Zoo extension", "This extension currently only supports 2D models.");
 				return;
 			}
-			var pane = BioimageIoPane.createInstance(qupath, model);
-			Stage s = new Stage();
-			s.setTitle(resources.getString("title"));
-			Scene ss = new Scene(pane);
-			s.setScene(ss);
-			s.show();
-			return;
+
+			var params = BioimageIoPane.createDialog(qupath, model);
 
 //			var params = new DnnBuilderPane(qupath, title)
 //					.promptForParameters(model, qupath.getImageData());
 //
-//			if (params == null)
-//				return;
-//
-//			var classifier = PatchClassifierParams.buildPixelClassifier(params);
-//			if (classifier == null) {
-//				logger.info("No pixel classifier created!");
-//				return;
-//			}
-//
-//			// Try to save in the current project
-//			var project = qupath.getProject();
-//			if (project != null) {
-//				var name = Dialogs.showInputDialog(title, "Choose classifier name", model.getName());
-//				if (name != null) {
-//					Dialogs.showInfoNotification(title, "Pixel classifier saved as " + name);
-//					project.getPixelClassifiers().put(name, classifier);
-//					showLoadPixelClassifier = true;
-//				}
-//			} else {
-//				var fileSaved = FileChoosers.promptToSaveFile(title,
-//						FileChoosers.promptToSaveFile(new FileChooser.ExtensionFilter("Pixel classifier", "*.json")));
-//				if (fileSaved != null) {
-//					PixelClassifiers.writeClassifier(classifier, fileSaved.toPath());
-//					Dialogs.showInfoNotification(title, "Pixel classifier saved to \n" + fileSaved.getAbsolutePath());
-//				}
-//			}
-//
-//
-//			// Offer to show the prediction in the current image, if it's small enough
-//			var imageData = qupath.getImageData();
-//			if (imageData != null) {
-//				var classifierServer = PixelClassifierTools.createPixelClassificationServer(imageData, classifier);
-//				int maxSize = 4096;
-//				if (classifierServer.getWidth() < maxSize && classifierServer.getHeight() < maxSize) {
-//					if (Dialogs.showYesNoDialog(title, "Apply prediction & open in ImageJ?")) {
-//						var imp = IJTools.extractHyperstack(classifierServer, null);
-//						tryToShowImages(Collections.singleton(imp));
-//					}
-//				}
-//			}
-//
-//			if (showLoadPixelClassifier) {
-//				// Try to show 'Load pixel classifier' dialog
-//				var action = qupath.lookupActionByText("Load pixel classifier...");
-//				if (action != null && !action.isDisabled())
-//					action.handle(new ActionEvent());
-//			}
+			if (params == null)
+				return;
+
+			var classifier = PatchClassifierParams.buildPixelClassifier(params);
+			if (classifier == null) {
+				logger.info("No pixel classifier created!");
+				return;
+			}
+
+			// Try to save in the current project
+			var project = qupath.getProject();
+			if (project != null) {
+				var name = Dialogs.showInputDialog(title, "Choose classifier name", model.getName());
+				if (name != null) {
+					Dialogs.showInfoNotification(title, "Pixel classifier saved as " + name);
+					project.getPixelClassifiers().put(name, classifier);
+					showLoadPixelClassifier = true;
+				}
+			} else {
+				var fileSaved = FileChoosers.promptToSaveFile(title,
+						FileChoosers.promptToSaveFile(new FileChooser.ExtensionFilter("Pixel classifier", "*.json")));
+				if (fileSaved != null) {
+					PixelClassifiers.writeClassifier(classifier, fileSaved.toPath());
+					Dialogs.showInfoNotification(title, "Pixel classifier saved to \n" + fileSaved.getAbsolutePath());
+				}
+			}
+
+
+			// Offer to show the prediction in the current image, if it's small enough
+			var imageData = qupath.getImageData();
+			if (imageData != null) {
+				var classifierServer = PixelClassifierTools.createPixelClassificationServer(imageData, classifier);
+				int maxSize = 4096;
+				if (classifierServer.getWidth() < maxSize && classifierServer.getHeight() < maxSize) {
+					if (Dialogs.showYesNoDialog(title, "Apply prediction & open in ImageJ?")) {
+						var imp = IJTools.extractHyperstack(classifierServer, null);
+						tryToShowImages(Collections.singleton(imp));
+					}
+				}
+			}
+
+			if (showLoadPixelClassifier) {
+				// Try to show 'Load pixel classifier' dialog
+				var action = qupath.lookupActionByText("Load pixel classifier...");
+				if (action != null && !action.isDisabled())
+					action.handle(new ActionEvent());
+			}
 
 			
 		} catch (Exception e) {
@@ -200,29 +198,11 @@ class BioimageIoCommand {
 		}
 	}
 
+
 	private static boolean isSpaceAxis(Axis ax) {
 		return ax.getType() == AxisType.X || ax.getType() == AxisType.Y || ax.getType() == AxisType.Z;
 	}
 
-
-	static void showDialog(ImageData<?> imageData, String path) throws IOException {
-		
-		var model = Model.parse(Paths.get(path));
-		
-		var params = new DnnBuilderPane(QuPathGUI.getInstance(), title)
-				.promptForParameters(model, imageData);
-		
-		
-		var classifier = PatchClassifierParams.buildPixelClassifier(params);
-		if (classifier == null) {
-			logger.info("No pixel classifier created!");
-			return;
-		}
-		
-	}
-	
-
-	
 	static class DnnBuilderPane {
 		
 		private final QuPathGUI qupath;

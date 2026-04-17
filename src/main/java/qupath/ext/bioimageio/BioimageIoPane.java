@@ -1,6 +1,8 @@
 package qupath.ext.bioimageio;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -11,6 +13,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
@@ -18,11 +21,15 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.bioimageio.spec.Model;
 import qupath.bioimageio.spec.tensor.axes.Axes;
+import qupath.bioimageio.spec.tensor.axes.SpaceAxes;
+import qupath.fx.dialogs.Dialogs;
 import qupath.fx.utils.GridPaneUtils;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.images.ImageData;
@@ -57,16 +64,33 @@ public class BioimageIoPane extends BorderPane {
     private Spinner<Integer> tileHeightSpinner;
     @FXML
     private VBox tileShapeOptionsBox;
+    @FXML
+    private Spinner<Double> pixelSizeSpinner;
 
-    /**
-     * Create an instance of the InstanSeg GUI pane.
-     *
-     * @param qupath The QuPath GUI it should be attached to.
-     * @return A handle on the UI element.
-     * @throws IOException If the FXML or resources fail to load.
-     */
-    public static BioimageIoPane createInstance(QuPathGUI qupath, Model model) throws IOException {
-        return new BioimageIoPane(qupath, model);
+
+    public static PatchClassifierParams createDialog(QuPathGUI qupath, Model model) {
+        try {
+			var pane = new BioimageIoPane(qupath, model);
+
+			var result = Dialogs.builder()
+					.title(resources.getString("title"))
+					.content(pane)
+					.buttons(ButtonType.CANCEL, ButtonType.APPLY)
+					.prefHeight(500) // Setting height & resizable deal with dialogs that are too 'tall'
+					.prefWidth(400)
+                    .resizable()
+					.showAndWait()
+					.orElse(ButtonType.CANCEL);
+
+			if (result.equals(ButtonType.CANCEL))
+				return null;
+
+			return pane.builder.build();
+		} catch (IOException e) {
+			Dialogs.showErrorMessage("BioimageIo", "GUI loading failed");
+			logger.error("Unable to load BioimageIo FXML", e);
+		}
+        return null;
     }
 
 
@@ -84,8 +108,52 @@ public class BioimageIoPane extends BorderPane {
         var imageData = qupath.getImageData();
         configureInputChannels(imageData);
         configureTileSize();
+        configurePixelSize(model);
         configureOutputClasses();
         configureOutputTypes();
+    }
+
+    private void configurePixelSize(Model model) {
+        var axes = model.getInputs().getFirst().getAxes();
+        String axString = Axes.getAxesString(axes);
+        int xind = axString.indexOf("x");
+        int yind = axString.indexOf("y");
+        double xsize=0.25, ysize=0.25;
+        if (xind != -1 && yind != -1) {
+            if (axes[xind] instanceof SpaceAxes.SpaceAxis spaceAxis) {
+                if (spaceAxis.getUnit() != SpaceAxes.SpaceUnit.MICROMETER) {
+                    logger.warn("Unknown space unit {}", spaceAxis.getUnit());
+                }
+                xsize = spaceAxis.getScale();
+            }
+            if (axes[yind] instanceof SpaceAxes.SpaceAxis spaceAxis) {
+                if (spaceAxis.getUnit() != SpaceAxes.SpaceUnit.MICROMETER) {
+                    logger.warn("Unknown space unit {}", spaceAxis.getUnit());
+                }
+                ysize = spaceAxis.getScale();
+            }
+        }
+        double defaultValue = (xsize + ysize) / 2;
+        pixelSizeSpinner.getValueFactory().setValue(defaultValue);
+
+        // todo consider number of decimal places
+        DecimalFormat format = new DecimalFormat("0.000");
+        pixelSizeSpinner.getValueFactory().setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Double value) {
+                if (value == null) return "";
+                return format.format(value);
+            }
+
+            @Override
+            public Double fromString(String string) {
+                try {
+                    return string == null || string.isEmpty() ? 0.0 : format.parse(string).doubleValue();
+                } catch (ParseException e) {
+                    return 0.0;
+                }
+            }
+        });
     }
 
     private void configureOutputClasses() {
@@ -105,7 +173,6 @@ public class BioimageIoPane extends BorderPane {
 
             if (c <= availableClasses.size())
                 comboOutputClasses.getSelectionModel().select(c-1);
-            GridPaneUtils.setToExpandGridPaneWidth(comboOutputClasses);
 
             comboOutputClasses.setTooltip(new Tooltip(resources.getString("tooltip.options.output.classes") + c));
             int ind = c - 1;
@@ -114,9 +181,13 @@ public class BioimageIoPane extends BorderPane {
                 builder.outputClasses(outputClasses);
             });
             Label label = new Label(String.format(resources.getString("ui.misc.class-n"), c));
+
+            // styling
             HBox box = new HBox(label, comboOutputClasses);
             box.setAlignment(Pos.CENTER_LEFT);
             box.getStyleClass().add("standard-spacing");
+            HBox.setHgrow(comboOutputClasses, Priority.ALWAYS);
+            comboOutputClasses.setMaxWidth(Double.MAX_VALUE);
             outputClassesBox.getChildren().add(box);
         }
 
@@ -147,11 +218,6 @@ public class BioimageIoPane extends BorderPane {
             comboChannel.getSelectionModel().select((c - 1) % availableChannels.size());
             inputChannels.add(comboChannel.getSelectionModel().getSelectedItem());
 
-            HBox box = new HBox(label, comboChannel);
-            box.setAlignment(Pos.CENTER_LEFT);
-            box.getStyleClass().add("standard-spacing");
-            GridPaneUtils.setToExpandGridPaneWidth(comboChannel);
-            this.inputChannelSelectors.getChildren().add(box);
             int ind = c - 1;
             comboChannel.getSelectionModel().selectedItemProperty().addListener((v, o, n) -> {
                 if (n == null) {
@@ -161,6 +227,14 @@ public class BioimageIoPane extends BorderPane {
                 inputChannels.set(ind, n);
                 builder.inputChannels(inputChannels);
             });
+
+            // styling
+            HBox box = new HBox(label, comboChannel);
+            box.setAlignment(Pos.CENTER_LEFT);
+            box.getStyleClass().add("standard-spacing");
+            HBox.setHgrow(comboChannel, Priority.ALWAYS);
+            comboChannel.setMaxWidth(Double.MAX_VALUE);
+            this.inputChannelSelectors.getChildren().add(box);
         }
     }
 
