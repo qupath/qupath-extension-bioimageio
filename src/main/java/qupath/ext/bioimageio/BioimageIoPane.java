@@ -70,10 +70,13 @@ public class BioimageIoPane extends BorderPane {
     @FXML
     private Button imageJButton;
 
+    private BioimageIoCommand.BioimageIoTest tester;
+
 
     public static PatchClassifierParams createDialog(QuPathGUI qupath, Model model) {
+        BioimageIoPane pane = null;
         try {
-			var pane = new BioimageIoPane(qupath, model);
+			pane = new BioimageIoPane(qupath, model);
 
 			var result = Dialogs.builder()
 					.title(resources.getString("title"))
@@ -92,7 +95,11 @@ public class BioimageIoPane extends BorderPane {
 		} catch (IOException e) {
 			Dialogs.showErrorMessage("BioimageIo", "GUI loading failed");
 			logger.error("Unable to load BioimageIo FXML", e);
-		}
+		} finally {
+            if (pane != null && pane.tester != null) {
+                pane.tester.close();
+            }
+        }
         return null;
     }
 
@@ -118,16 +125,9 @@ public class BioimageIoPane extends BorderPane {
     }
 
     private void configureImageJButton() {
-        var tester = new BioimageIoCommand.BioimageIoTest(model);
+        tester = new BioimageIoCommand.BioimageIoTest(model);
         if (tester.hasInput()) {
-            var btnTest = new Button("Show test images in ImageJ");
-            btnTest.setOnAction(e -> tester.runAndShowOutput(params));
-            GridPaneUtils.addGridRow(pane, row++, 0,
-                    "Attempt to run prediction on the test image, if available.\n"
-                            + "This checks the model runes, but does not use most of the customizations here\n"
-                            + "because the channel input is fixed.",
-                    btnTest, btnTest);
-            GridPaneUtils.setToExpandGridPaneWidth(btnTest);
+            imageJButton.setOnAction(e -> tester.runAndShowOutput(params));
         }
     }
 

@@ -176,7 +176,7 @@ class BioimageIoCommand {
 		private Mat matInput;
 		private Mat matOutput;
 		
-		private BioimageIoTest(Model model) {
+		BioimageIoTest(Model model) {
 			this.model = model;
 			var testInputs = model.getTestInputs();
 			var testOutputs = model.getTestOutputs();

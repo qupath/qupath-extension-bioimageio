@@ -11,7 +11,7 @@
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.control.Button?>
 
-<fx:root maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefWidth="380.0" stylesheets="@bioimageio.css" type="BorderPane" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1">
+<fx:root maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefWidth="380.0" stylesheets="@bioimageio.css" style="-fx-padding: 5" type="BorderPane" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1">
     <center>
         <VBox>
             <TitledPane text="%ui.section.experimental" animated="false" collapsible="false" prefWidth="380.0" prefHeight="150.0"  styleClass="uncollapsible-titled-pane,bioimageio-title" VBox.vgrow="NEVER">
@@ -25,7 +25,7 @@
                         <Label text="%ui.section.input-channels" styleClass="bioimageio-subtitle"/>
                         <VBox fx:id="inputChannelSelectors" />
                     </VBox>
-                    <VBox styleClass="standard-spacing">
+                    <VBox >
                         <Label text="%ui.section.input-resolution" styleClass="bioimageio-subtitle"/>
                         <HBox alignment="CENTER_LEFT" styleClass="standard-spacing">
                             <Label text="%ui.section.input-resolution-description" wrapText="true"/>
@@ -71,7 +71,7 @@
                 </VBox>
             </TitledPane>
             <TitledPane animated="false" prefWidth="380.0" text="%ui.section.output" VBox.vgrow="NEVER">
-                <VBox styleClass="standard-spacing,standard-padding">
+                <VBox styleClass="standard-spacing">
                     <Label text="%ui.section.output-classes" styleClass="bioimageio-subtitle" wrapText="true"/>
                     <Label text="%ui.options.output-classes-description" />
                     <VBox fx:id="outputClassesBox" />
@@ -82,7 +82,7 @@
                     </HBox>
                 </VBox>
             </TitledPane>
-            <VBox styleClass="standard-spacing,standard-padding">
+            <VBox>
                 <Button fx:id="imageJButton" text="%ui.section.imagej" maxWidth="Infinity">
                     <tooltip>
                         <Tooltip text="%tooltip.section.imagej"/>
