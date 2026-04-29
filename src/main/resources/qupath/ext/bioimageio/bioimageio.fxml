@@ -38,7 +38,7 @@
                                 </valueFactory>
                             </Spinner>
                         </HBox>
-                        <HBox alignment="CENTER_LEFT" styleClass="standard-spacing" fx:id="resolutionBox">
+                        <HBox alignment="CENTER_LEFT" styleClass="standard-spacing" fx:id="downsampleBox">
                             <Label text="%ui.section.input-downsample-description" wrapText="true"/>
                             <Spinner fx:id="downsampleSpinner" prefWidth="100.0" >
                                 <tooltip>

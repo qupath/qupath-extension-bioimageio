@@ -73,7 +73,7 @@ public class BioimageIoPane extends BorderPane {
     @FXML
     private Button imageJButton;
     @FXML
-    private HBox resolutionBox;
+    private HBox downsampleBox;
     @FXML
     private HBox pixelSizeBox;
     @FXML
@@ -156,7 +156,7 @@ public class BioimageIoPane extends BorderPane {
             resolutionSectionBox.getChildren().remove(pixelSizeBox);
         } else {
             // if using pixel size, we're not using downsample
-            resolutionSectionBox.getChildren().remove(resolutionBox);
+            resolutionSectionBox.getChildren().remove(downsampleBox);
         }
         double defaultValue = (xsize + ysize) / 2;
         pixelSizeSpinner.getValueFactory().setValue(defaultValue);
