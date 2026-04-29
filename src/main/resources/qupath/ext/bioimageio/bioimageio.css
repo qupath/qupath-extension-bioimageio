@@ -1,0 +1,33 @@
+/* Title */
+.bioimageio-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-base-color;
+}
+
+/* Sub-title */
+.bioimageio-subtitle {
+    -fx-text-fill: -fx-text-base-color;
+    -fx-font-weight: bold;
+    -fx-padding: 10 0 10 0;
+    -fx-opacity:0.6;
+}
+
+/* spacing - current use in HBox*/
+.standard-spacing {
+    -fx-spacing: 7.5;
+}
+
+/* spacing - current use in VBox*/
+.standard-vertical-spacing {
+    -fx-spacing: 5;
+}
+
+.standard-padding {
+    -fx-padding: 2;
+}
+
+.fa-icon {
+    -fx-font-family: FontAwesome;
+    -fx-font-size: 14px;
+    -fx-fill: -fx-text-base-color;
+}
