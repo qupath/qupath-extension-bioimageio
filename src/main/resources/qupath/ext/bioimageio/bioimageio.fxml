@@ -29,7 +29,7 @@
                         <Label text="%ui.section.input-resolution" styleClass="bioimageio-subtitle"/>
                         <HBox alignment="CENTER_LEFT" styleClass="standard-spacing" fx:id="pixelSizeBox">
                             <Label text="%ui.section.input-pixel-size-description" wrapText="true"/>
-                            <Spinner fx:id="pixelSizeSpinner" prefWidth="100.0" >
+                            <Spinner fx:id="pixelSizeSpinner" editable="true" prefWidth="100.0" >
                                 <tooltip>
                                     <Tooltip text="%tooltip.options.pixel-size" />
                                 </tooltip>
@@ -40,7 +40,7 @@
                         </HBox>
                         <HBox alignment="CENTER_LEFT" styleClass="standard-spacing" fx:id="downsampleBox">
                             <Label text="%ui.section.input-downsample-description" wrapText="true"/>
-                            <Spinner fx:id="downsampleSpinner" prefWidth="100.0" >
+                            <Spinner fx:id="downsampleSpinner" editable="true" prefWidth="100.0" >
                                 <tooltip>
                                     <Tooltip text="%tooltip.options.downsample" />
                                 </tooltip>
