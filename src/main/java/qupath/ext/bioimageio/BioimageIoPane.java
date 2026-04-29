@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.bioimageio.spec.Model;
 import qupath.bioimageio.spec.tensor.axes.Axes;
-import qupath.bioimageio.spec.tensor.axes.Axis;
 import qupath.bioimageio.spec.tensor.axes.SpaceAxes;
 import qupath.fx.dialogs.Dialogs;
 import qupath.lib.gui.QuPathGUI;
@@ -40,6 +39,10 @@ import qupath.lib.images.servers.PixelCalibration;
 import qupath.lib.objects.classes.PathClass;
 import qupath.opencv.ml.BioimageIoTools;
 import qupath.opencv.ml.PatchClassifierParams;
+
+
+import static qupath.fx.utils.FXUtils.resetSpinnerNullToPrevious;
+
 
 public class BioimageIoPane extends BorderPane {
     private final QuPathGUI qupath;
@@ -147,12 +150,25 @@ public class BioimageIoPane extends BorderPane {
         int yind = axString.indexOf("y");
         double xsize=0, ysize=0;
         // if pixel size specified then use pixel size spinners
+        PixelCalibration pixelCal = null;
         if (xind != -1 && yind != -1) {
-            xsize = getSpaceAxisSize(axes[xind]);
-            ysize = getSpaceAxisSize(axes[yind]);
+            if (axes[xind] instanceof SpaceAxes.SpaceAxis spaceAxisX && axes[yind] instanceof SpaceAxes.SpaceAxis spaceAxisY) {
+                if (spaceAxisX.getUnit() != SpaceAxes.SpaceUnit.MICROMETER || spaceAxisY.getUnit() != SpaceAxes.SpaceUnit.MICROMETER) {
+                    logger.warn("Unsupported space unit {}, ignoring", spaceAxisX.getUnit());
+                    pixelCal = PixelCalibration.getDefaultInstance();
+                } else {
+                    xsize = spaceAxisX.getScale();
+                    ysize = spaceAxisY.getScale();
+                    pixelCal = new PixelCalibration.Builder().pixelSizeMicrons(xsize, ysize).build();
+                }
+            } else {
+                logger.warn("X or Y axis is not a space axis and therefore has unknown pixel size");
+            }
+        } else {
+            pixelCal = PixelCalibration.getDefaultInstance();
         }
-        // if pixel size is not specified, remove the pixel size box
-        if (xsize == 0 || ysize == 0) {
+        // if pixel calibration is default, remove the pixel size box
+        if (pixelCal == PixelCalibration.getDefaultInstance()) {
             resolutionSectionBox.getChildren().remove(pixelSizeBox);
         } else {
             // if using pixel size, we're not using downsample
@@ -180,23 +196,14 @@ public class BioimageIoPane extends BorderPane {
         });
         pixelSizeSpinner.valueProperty().addListener((v, o, n) -> {
             var pcBuilder = new PixelCalibration.Builder()
-                    .pixelSizeMicrons(n.doubleValue(), n.doubleValue());
+                    .pixelSizeMicrons(n, n);
             builder.inputResolution(pcBuilder.build());
         });
-
         downsampleSpinner.valueProperty().addListener((v, o, n) -> {
             builder.inputResolution(PixelCalibration.getDefaultInstance(), n);
         });
-    }
-
-    private double getSpaceAxisSize(Axis axis) {
-        if (axis instanceof SpaceAxes.SpaceAxis spaceAxis) {
-            if (spaceAxis.getUnit() != SpaceAxes.SpaceUnit.MICROMETER) {
-                logger.warn("Unknown space unit {}", spaceAxis.getUnit());
-            }
-            return spaceAxis.getScale();
-        }
-        return 0;
+        resetSpinnerNullToPrevious(downsampleSpinner);
+        resetSpinnerNullToPrevious(pixelSizeSpinner);
     }
 
     private void configureOutputClasses() {
