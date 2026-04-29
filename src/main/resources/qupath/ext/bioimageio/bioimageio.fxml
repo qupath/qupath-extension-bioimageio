@@ -25,16 +25,27 @@
                         <Label text="%ui.section.input-channels" styleClass="bioimageio-subtitle"/>
                         <VBox fx:id="inputChannelSelectors" />
                     </VBox>
-                    <VBox >
+                    <VBox fx:id="resolutionSectionBox">
                         <Label text="%ui.section.input-resolution" styleClass="bioimageio-subtitle"/>
-                        <HBox alignment="CENTER_LEFT" styleClass="standard-spacing">
-                            <Label text="%ui.section.input-resolution-description" wrapText="true"/>
+                        <HBox alignment="CENTER_LEFT" styleClass="standard-spacing" fx:id="pixelSizeBox">
+                            <Label text="%ui.section.input-pixel-size-description" wrapText="true"/>
                             <Spinner fx:id="pixelSizeSpinner" prefWidth="100.0" >
                                 <tooltip>
-                                    <Tooltip text="%options.pixel-size" />
+                                    <Tooltip text="%tooltip.options.pixel-size" />
                                 </tooltip>
                                 <valueFactory>
                                     <SpinnerValueFactory.DoubleSpinnerValueFactory min="0.01" max="5" initialValue="0.25" amountToStepBy="0.001"/>
+                                </valueFactory>
+                            </Spinner>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" styleClass="standard-spacing" fx:id="resolutionBox">
+                            <Label text="%ui.section.input-downsample-description" wrapText="true"/>
+                            <Spinner fx:id="downsampleSpinner" prefWidth="100.0" >
+                                <tooltip>
+                                    <Tooltip text="%tooltip.options.downsample" />
+                                </tooltip>
+                                <valueFactory>
+                                    <SpinnerValueFactory.DoubleSpinnerValueFactory min="0.01" max="100" initialValue="1" amountToStepBy="0.1"/>
                                 </valueFactory>
                             </Spinner>
                         </HBox>

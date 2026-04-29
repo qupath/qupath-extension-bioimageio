@@ -29,13 +29,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.bioimageio.spec.Model;
 import qupath.bioimageio.spec.tensor.axes.Axes;
+import qupath.bioimageio.spec.tensor.axes.Axis;
 import qupath.bioimageio.spec.tensor.axes.SpaceAxes;
 import qupath.fx.dialogs.Dialogs;
-import qupath.fx.utils.GridPaneUtils;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.images.ImageData;
 import qupath.lib.images.servers.ColorTransforms;
 import qupath.lib.images.servers.ImageServerMetadata;
+import qupath.lib.images.servers.PixelCalibration;
 import qupath.lib.objects.classes.PathClass;
 import qupath.opencv.ml.BioimageIoTools;
 import qupath.opencv.ml.PatchClassifierParams;
@@ -68,7 +69,15 @@ public class BioimageIoPane extends BorderPane {
     @FXML
     private Spinner<Double> pixelSizeSpinner;
     @FXML
+    private Spinner<Double> downsampleSpinner;
+    @FXML
     private Button imageJButton;
+    @FXML
+    private HBox resolutionBox;
+    @FXML
+    private HBox pixelSizeBox;
+    @FXML
+    private VBox resolutionSectionBox;
 
     private BioimageIoCommand.BioimageIoTest tester;
 
@@ -136,20 +145,18 @@ public class BioimageIoPane extends BorderPane {
         String axString = Axes.getAxesString(axes);
         int xind = axString.indexOf("x");
         int yind = axString.indexOf("y");
-        double xsize=0.25, ysize=0.25;
+        double xsize=0, ysize=0;
+        // if pixel size specified then use pixel size spinners
         if (xind != -1 && yind != -1) {
-            if (axes[xind] instanceof SpaceAxes.SpaceAxis spaceAxis) {
-                if (spaceAxis.getUnit() != SpaceAxes.SpaceUnit.MICROMETER) {
-                    logger.warn("Unknown space unit {}", spaceAxis.getUnit());
-                }
-                xsize = spaceAxis.getScale();
-            }
-            if (axes[yind] instanceof SpaceAxes.SpaceAxis spaceAxis) {
-                if (spaceAxis.getUnit() != SpaceAxes.SpaceUnit.MICROMETER) {
-                    logger.warn("Unknown space unit {}", spaceAxis.getUnit());
-                }
-                ysize = spaceAxis.getScale();
-            }
+            xsize = getSpaceAxisSize(axes[xind]);
+            ysize = getSpaceAxisSize(axes[yind]);
+        }
+        // if pixel size is not specified, remove the pixel size box
+        if (xsize == 0 || ysize == 0) {
+            resolutionSectionBox.getChildren().remove(pixelSizeBox);
+        } else {
+            // if using pixel size, we're not using downsample
+            resolutionSectionBox.getChildren().remove(resolutionBox);
         }
         double defaultValue = (xsize + ysize) / 2;
         pixelSizeSpinner.getValueFactory().setValue(defaultValue);
@@ -171,6 +178,25 @@ public class BioimageIoPane extends BorderPane {
                 }
             }
         });
+        pixelSizeSpinner.valueProperty().addListener((v, o, n) -> {
+            var pcBuilder = new PixelCalibration.Builder()
+                    .pixelSizeMicrons(n.doubleValue(), n.doubleValue());
+            builder.inputResolution(pcBuilder.build());
+        });
+
+        downsampleSpinner.valueProperty().addListener((v, o, n) -> {
+            builder.inputResolution(PixelCalibration.getDefaultInstance(), n);
+        });
+    }
+
+    private double getSpaceAxisSize(Axis axis) {
+        if (axis instanceof SpaceAxes.SpaceAxis spaceAxis) {
+            if (spaceAxis.getUnit() != SpaceAxes.SpaceUnit.MICROMETER) {
+                logger.warn("Unknown space unit {}", spaceAxis.getUnit());
+            }
+            return spaceAxis.getScale();
+        }
+        return 0;
     }
 
     private void configureOutputClasses() {
