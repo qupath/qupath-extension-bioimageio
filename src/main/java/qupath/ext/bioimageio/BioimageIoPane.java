@@ -167,15 +167,18 @@ public class BioimageIoPane extends BorderPane {
         } else {
             pixelCal = PixelCalibration.getDefaultInstance();
         }
+
         // if pixel calibration is default, remove the pixel size box
         if (pixelCal == PixelCalibration.getDefaultInstance()) {
             resolutionSectionBox.getChildren().remove(pixelSizeBox);
+            builder.inputResolution(PixelCalibration.getDefaultInstance(), 1);
         } else {
             // if using pixel size, we're not using downsample
             resolutionSectionBox.getChildren().remove(downsampleBox);
+            double defaultValue = (xsize + ysize) / 2;
+            pixelSizeSpinner.getValueFactory().setValue(defaultValue);
+            builder.inputResolution(new PixelCalibration.Builder().pixelSizeMicrons(defaultValue, defaultValue).build());
         }
-        double defaultValue = (xsize + ysize) / 2;
-        pixelSizeSpinner.getValueFactory().setValue(defaultValue);
 
         DecimalFormat format = new DecimalFormat("0.000");
         pixelSizeSpinner.getValueFactory().setConverter(new StringConverter<>() {
