@@ -191,7 +191,7 @@ class BioimageIoCommand {
 				if (images.size() == 1) {
 					this.matInput = images.getFirst();
 				} else {
-					throw new IllegalStateException("Too many images. Not sure what to do.");
+					throw new IllegalArgumentException("Too many input images. Not sure what to do.");
 				}
 			}
 			if (!testOutputs.isEmpty()) {
@@ -201,7 +201,7 @@ class BioimageIoCommand {
 				if (images.size() == 1) {
 					this.matOutput = images.getFirst();
 				} else {
-					throw new IllegalStateException("Too many images. Not sure what to do.");
+					throw new IllegalArgumentException("Too many target images. Not sure what to do.");
 				}
 			}
 		}
