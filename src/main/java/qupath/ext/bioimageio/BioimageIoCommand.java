@@ -36,6 +36,7 @@ import qupath.fx.dialogs.FileChoosers;
 import qupath.imagej.tools.IJTools;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.objects.classes.PathClass;
+import qupath.opencv.dnn.DnnTools;
 import qupath.opencv.ml.PatchClassifierParams;
 import qupath.opencv.ml.pixel.PixelClassifierTools;
 import qupath.opencv.ml.pixel.PixelClassifiers;
@@ -185,11 +186,23 @@ class BioimageIoCommand {
 				return;
 			if (!testInputs.isEmpty()) {
 				var pathInput = Paths.get(baseUri.resolve(testInputs.getFirst()));
-				matInput = tryToReadMat(pathInput);
+				var matInput = tryToReadMat(pathInput);
+				var images = DnnTools.imagesFromBlob(matInput);
+				if (images.size() == 1) {
+					this.matInput = images.getFirst();
+				} else {
+					throw new IllegalStateException("Too many images. Not sure what to do.");
+				}
 			}
 			if (!testOutputs.isEmpty()) {
 				var pathOutput = Paths.get(baseUri.resolve(testOutputs.getFirst()));
-				matOutput = tryToReadMat(pathOutput);
+				var matOutput = tryToReadMat(pathOutput);
+				var images = DnnTools.imagesFromBlob(matOutput);
+				if (images.size() == 1) {
+					this.matOutput = images.getFirst();
+				} else {
+					throw new IllegalStateException("Too many images. Not sure what to do.");
+				}
 			}
 		}
 		
@@ -201,7 +214,7 @@ class BioimageIoCommand {
 			if (path == null || !Files.exists(path))
 				return null;
 			try {
-				return NumpyTools.readMat(path, true);
+				return NumpyTools.readMat(path, false);
 			} catch (IOException e) {
 				logger.error(e.getLocalizedMessage(), e);
 				return null;
@@ -240,9 +253,11 @@ class BioimageIoCommand {
 				var matPrediction = op.apply(matInput2);
 				
 				List<ImagePlus> imps = new ArrayList<>();
-				imps.add(OpenCVTools.matToImagePlus(model.getName() + "-input", matInput));
+				var impInput = OpenCVTools.matToImagePlus(model.getName() + "-input", matInput);
+				impInput.setDimensions(2, 1, 1);
+				imps.add(impInput);
 				imps.add(OpenCVTools.matToImagePlus(model.getName() + "-prediction", matPrediction));
-				
+
 				if (matOutput != null) {
 					imps.add(OpenCVTools.matToImagePlus(model.getName() + "-target", matOutput));
 					
