@@ -150,7 +150,7 @@ public class BioimageIoPane extends BorderPane {
         int yind = axString.indexOf("y");
         double xsize=0, ysize=0;
         // if pixel size specified then use pixel size spinners
-        PixelCalibration pixelCal = null;
+        PixelCalibration pixelCal = PixelCalibration.getDefaultInstance();;
         if (xind != -1 && yind != -1) {
             if (axes[xind] instanceof SpaceAxes.SpaceAxis spaceAxisX && axes[yind] instanceof SpaceAxes.SpaceAxis spaceAxisY) {
                 if (spaceAxisX.getUnit() != SpaceAxes.SpaceUnit.MICROMETER || spaceAxisY.getUnit() != SpaceAxes.SpaceUnit.MICROMETER) {

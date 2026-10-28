@@ -29,6 +29,7 @@ import org.bytedeco.opencv.opencv_core.Mat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.bioimageio.spec.Model;
+import qupath.bioimageio.spec.tensor.axes.Axes;
 import qupath.bioimageio.spec.tensor.axes.Axis;
 import qupath.bioimageio.spec.tensor.axes.AxisType;
 import qupath.fx.dialogs.Dialogs;
@@ -185,23 +186,35 @@ class BioimageIoCommand {
 			if (baseUri == null)
 				return;
 			if (!testInputs.isEmpty()) {
+				var axes = model.getInputs().getFirst().getAxes();
+				var axesString = Axes.getAxesString(axes);
 				var pathInput = Paths.get(baseUri.resolve(testInputs.getFirst()));
-				var matInput = tryToReadMat(pathInput);
-				var images = DnnTools.imagesFromBlob(matInput);
-				if (images.size() == 1) {
-					this.matInput = images.getFirst();
+				if (axesString.indexOf("c") < axesString.indexOf("x")) {
+					var matInput = tryToReadMat(pathInput, false);
+					var images = DnnTools.imagesFromBlob(matInput);
+					if (images.size() == 1) {
+						this.matInput = images.getFirst();
+					} else {
+						throw new IllegalArgumentException("Too many input images. Not sure what to do.");
+					}
 				} else {
-					throw new IllegalArgumentException("Too many input images. Not sure what to do.");
+					matInput = tryToReadMat(pathInput, true);
 				}
 			}
 			if (!testOutputs.isEmpty()) {
+				var axes = model.getOutputs().getFirst().getAxes();
+				var axesString = Axes.getAxesString(axes);
 				var pathOutput = Paths.get(baseUri.resolve(testOutputs.getFirst()));
-				var matOutput = tryToReadMat(pathOutput);
-				var images = DnnTools.imagesFromBlob(matOutput);
-				if (images.size() == 1) {
-					this.matOutput = images.getFirst();
+				if (axesString.indexOf("c") < axesString.indexOf("x")) {
+					var matOutput = tryToReadMat(pathOutput, false);
+					var images = DnnTools.imagesFromBlob(matOutput);
+					if (images.size() == 1) {
+						this.matOutput = images.getFirst();
+					} else {
+						throw new IllegalArgumentException("Too many input images. Not sure what to do.");
+					}
 				} else {
-					throw new IllegalArgumentException("Too many target images. Not sure what to do.");
+					matOutput = tryToReadMat(pathOutput, true);
 				}
 			}
 		}
@@ -210,11 +223,11 @@ class BioimageIoCommand {
 			return matInput != null;
 		}
 		
-		private static Mat tryToReadMat(Path path) {
+		private static Mat tryToReadMat(Path path, boolean squeezeDimensions) {
 			if (path == null || !Files.exists(path))
 				return null;
 			try {
-				return NumpyTools.readMat(path, false);
+				return NumpyTools.readMat(path, squeezeDimensions);
 			} catch (IOException e) {
 				logger.error(e.getLocalizedMessage(), e);
 				return null;
