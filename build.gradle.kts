@@ -12,8 +12,6 @@ qupathExtension {
 }
 
 dependencies {
-	implementation(libs.qupath.imglib2)
-
 	implementation(libs.bundles.qupath)
 	implementation(libs.bundles.logging)
 	implementation(libs.qupath.fxtras)
