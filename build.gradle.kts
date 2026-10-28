@@ -5,7 +5,7 @@ plugins {
 
 qupathExtension {
 	name = "qupath-extension-bioimageio"
-	version = "0.2.1"
+	version = "0.2.2"
 	group = "io.github.qupath"
 	description = "QuPath extension to use the Bioimage Model Zoo (bioimage.io)"
 	automaticModule = "qupath.extension.bioimageio"
