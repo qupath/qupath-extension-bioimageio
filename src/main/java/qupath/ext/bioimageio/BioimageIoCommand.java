@@ -253,9 +253,7 @@ class BioimageIoCommand {
 				var matPrediction = op.apply(matInput2);
 				
 				List<ImagePlus> imps = new ArrayList<>();
-				var impInput = OpenCVTools.matToImagePlus(model.getName() + "-input", matInput);
-				impInput.setDimensions(2, 1, 1);
-				imps.add(impInput);
+				imps.add(OpenCVTools.matToImagePlus(model.getName() + "-input", matInput));
 				imps.add(OpenCVTools.matToImagePlus(model.getName() + "-prediction", matPrediction));
 
 				if (matOutput != null) {
